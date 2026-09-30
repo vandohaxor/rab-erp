@@ -1,0 +1,356 @@
+<%
+  const sudahAbsen = Boolean(hariIni);
+  const st = hariIni ? (STATUS_ABSENSI[hariIni.status] || { label: hariIni.status, badge: 'secondary' }) : null;
+  const fotoHariIni = fotoTerpilih || null;
+  const tahunSekarang = new Date().getFullYear();
+  const hariKerja = typeof hariKerjaBulanan !== 'undefined' ? hariKerjaBulanan : 22;
+%>
+
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `<button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Cetak Rekap</button>`
+    }) %>
+
+<div class="row g-4">
+  <!-- PANEL ABSEN -->
+  <div class="col-lg-5">
+    <div class="absen-panel mb-4">
+      <div class="position-relative">
+        <div class="text-white-50 text-uppercase small fw-semibold mb-1" style="letter-spacing:.08em">
+          <%= h.dayName(h.today()) %>, <%= h.date(h.today(), 'D MMMM YYYY') %>
+        </div>
+        <div class="absen-clock mb-3" data-clock>--:--:--</div>
+
+        <% if (!sudahAbsen) { %>
+          <div class="absen-status-chip mb-3">
+            <i class="bi bi-clock-fill"></i> Belum melakukan absensi hari ini
+          </div>
+        <% } else { %>
+          <div class="absen-status-chip mb-3">
+            <i class="bi bi-<%= hariIni.jam_pulang ? 'check-circle-fill' : 'hourglass-split' %>"></i>
+            <% if (hariIni.status !== 'hadir') { %>
+              Tercatat sebagai <%= st.label %> - <%= hariIni.keterangan || 'tanpa keterangan' %>
+            <% } else if (hariIni.jam_pulang) { %>
+              Sudah lengkap - masuk <%= h.dotTime(hariIni.jam_masuk) %>, pulang <%= h.dotTime(hariIni.jam_pulang) %>
+            <% } else { %>
+              Sedang bekerja - masuk pukul <%= h.dotTime(hariIni.jam_masuk) %>
+            <% } %>
+          </div>
+        <% } %>
+
+        <div class="text-white-50 small mt-3">
+          Jadwal kerja <%= h.dotTime(jadwal.jamMasuk) %> - <%= h.dotTime(jadwal.jamPulang) %>
+          &middot; toleransi <%= jadwal.toleransi %> menit
+        </div>
+      </div>
+    </div>
+
+    <% if (!sudahAbsen) { %>
+      <div class="card mb-4">
+        <div class="card-header"><span><i class="bi bi-box-arrow-in-right me-1"></i>Form Absen Masuk</span></div>
+        <div class="card-body">
+          <form method="post" action="/absensi/saya/masuk" enctype="multipart/form-data" id="formAbsen" novalidate>
+            <input type="hidden" name="tanggal" value="<%= h.today() %>">
+            <input type="hidden" name="jam" value="<%= h.nowTime() %>" data-jam-absen>
+
+            <div class="mb-3">
+              <label class="form-label" for="status">Status Kehadiran <span class="text-danger">*</span></label>
+              <select class="form-select" id="status" name="status" required>
+                <% ['hadir', 'izin', 'sakit'].forEach(function (s) { const m = STATUS_ABSENSI[s]; %>
+                  <option value="<%= s %>" <%= statusTerpilih === s ? 'selected' : '' %>><%= m.label %></option>
+                <% }); %>
+              </select>
+              <div class="form-text">
+                Foto absensi wajib diunggah untuk semua status, keterangan wajib saat memilih Izin atau Sakit.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="keterangan">
+                Keterangan<span class="text-danger" id="tandaKeterangan" hidden> *</span>
+              </label>
+              <textarea class="form-control" id="keterangan" name="keterangan" rows="2" maxlength="250"
+                        placeholder="Contoh: Izin Makan di Luar / Demam dan perlu istirahat"></textarea>
+              <div class="form-text">Wajib diisi saat memilih Izin atau Sakit.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="foto">Foto Absensi <span class="text-danger">*</span></label>
+              <input type="file" class="form-control" id="foto" name="foto" accept="image/*" capture="environment" required>
+              <div class="form-text" id="infoFoto">
+                Wajib diisi. Foto dikecilkan otomatis di perangkat sebelum dikirim.
+              </div>
+              <div class="mt-2 d-none" id="previewFotoWrap">
+                <img id="previewFoto" alt="Pratinjau foto absensi" class="img-fluid rounded border" style="max-height:220px">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-navy w-100 py-2">
+              <i class="bi bi-camera me-1"></i> Kirim Absen Masuk
+            </button>
+          </form>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="card mb-4">
+        <div class="card-header"><span><i class="bi bi-check2-square me-1"></i>Absensi Hari Ini</span></div>
+        <div class="card-body">
+          <% if (fotoHariIni) { %>
+            <div class="mb-3">
+              <div class="form-label mb-1">Foto yang Anda kirim</div>
+              <a href="<%= fotoHariIni %>" target="_blank" rel="noopener">
+                <img src="<%= fotoHariIni %>" alt="Foto absensi hari ini" class="img-fluid rounded border" style="max-height:220px">
+              </a>
+            </div>
+          <% } %>
+
+          <% if (hariIni.status === 'hadir' && !hariIni.jam_pulang) { %>
+            <form method="post" action="/absensi/saya/pulang"
+                  data-confirm="Konfirmasi absen pulang? Jam lembur akan dihitung dari waktu kepulangan Anda.">
+              <input type="hidden" name="tanggal" value="<%= h.today() %>">
+              <input type="hidden" name="jam" value="<%= h.nowTime() %>" data-jam-absen>
+              <button type="submit" class="btn btn-outline-success w-100 py-2">
+                <i class="bi bi-box-arrow-right me-1"></i> Absen Pulang
+              </button>
+            </form>
+          <% } else if (hariIni.status === 'hadir') { %>
+            <div class="alert alert-success mb-0 small">
+              <i class="bi bi-patch-check-fill me-1"></i> Absensi hari ini sudah lengkap. Terima kasih!
+            </div>
+          <% } else { %>
+            <div class="alert alert-info mb-0 small">
+              <i class="bi bi-info-circle me-1"></i>
+              Status hari ini <strong><%= st.label %></strong>, jadi tidak ada absen pulang.
+              Hubungi atasan bila perlu koreksi.
+            </div>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-info-circle me-1"></i>Informasi Hari Ini</span></div>
+      <div class="card-body">
+        <dl class="mb-0">
+          <div class="detail-row"><dt>Jam masuk tercatat</dt><dd class="num"><%= hariIni && hariIni.jam_masuk ? h.dotTime(hariIni.jam_masuk) : '-' %></dd></div>
+          <div class="detail-row"><dt>Jam pulang tercatat</dt><dd class="num"><%= hariIni && hariIni.jam_pulang ? h.dotTime(hariIni.jam_pulang) : '-' %></dd></div>
+          <div class="detail-row"><dt>Durasi kerja</dt><dd class="num"><%= hariIni && hariIni.durasi_menit ? h.duration(hariIni.durasi_menit) : '-' %></dd></div>
+          <div class="detail-row">
+            <dt>Lembur hari ini</dt>
+            <dd class="num <%= hariIni && hariIni.menit_lembur ? 'text-success-strong' : '' %>">
+              <%= hariIni && hariIni.menit_lembur ? h.duration(hariIni.menit_lembur) : '-' %>
+            </dd>
+          </div>
+          <% if (terlambat > 0) { %>
+            <div class="detail-row">
+              <dt>Potongan keterlambatan</dt>
+              <dd class="text-warning-strong"><%= terlambat %> menit</dd>
+            </div>
+          <% } %>
+        </dl>
+
+        <div class="alert alert-light border small mt-3 mb-0">
+          <i class="bi bi-calculator me-1 text-navy"></i>
+          Nilai lembur dihitung otomatis: setiap menit di atas <%= h.dotTime(jadwal.jamPulang) %>
+          dihitung lembur dan dikonversi ke nilai rupiah saat penggajian.
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><span><i class="bi bi-cash-stack me-1"></i>Komponen Gaji Anda</span></div>
+      <div class="card-body">
+        <dl class="mb-0">
+          <div class="detail-row"><dt>Gaji pokok</dt><dd class="num"><%= h.money(karyawan.gaji_pokok) %></dd></div>
+          <div class="detail-row"><dt>Tunjangan transport</dt><dd class="num"><%= h.money(karyawan.tunjangan_transport) %></dd></div>
+          <div class="detail-row"><dt>Tunjangan makan</dt><dd class="num"><%= h.money(karyawan.tunjangan_makan) %></dd></div>
+          <div class="detail-row"><dt>Tunjangan lainnya</dt><dd class="num"><%= h.money(karyawan.tunjangan_lain) %></dd></div>
+          <div class="detail-row border-0">
+            <dt class="fw-bold">Total per bulan</dt>
+            <dd class="fw-bold num">
+              <%= h.money(Number(karyawan.gaji_pokok) + Number(karyawan.tunjangan_transport) + Number(karyawan.tunjangan_makan) + Number(karyawan.tunjangan_lain)) %>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- REKAP & RIWAYAT -->
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-header">
+        <span><i class="bi bi-clipboard-data me-1"></i>Rekap <%= h.monthName(bulan) %> <%= tahun %></span>
+        <form method="get" class="d-flex gap-2">
+          <select class="form-select form-select-sm" name="bulan" data-auto-submit style="width:auto">
+            <% BULAN.forEach(function (b, i) { %>
+              <option value="<%= i + 1 %>" <%= bulan === i + 1 ? 'selected' : '' %>><%= b %></option>
+            <% }); %>
+          </select>
+          <select class="form-select form-select-sm" name="tahun" data-auto-submit style="width:auto">
+            <% for (let t = tahunSekarang - 1; t <= tahunSekarang + 1; t += 1) { %>
+              <option value="<%= t %>" <%= tahun === t ? 'selected' : '' %>><%= t %></option>
+            <% } %>
+          </select>
+        </form>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 text-center mb-3">
+          <div class="col-4"><div class="stat-value text-success-strong"><%= rekap.hariHadir %></div><div class="stat-label">Hadir</div></div>
+          <div class="col-4"><div class="stat-value text-info-strong"><%= rekap.hariIzin %></div><div class="stat-label">Izin</div></div>
+          <div class="col-4"><div class="stat-value text-warning-strong"><%= rekap.hariSakit %></div><div class="stat-label">Sakit</div></div>
+          <div class="col-4"><div class="stat-value"><%= h.duration(rekap.menitKerja) %></div><div class="stat-label">Jam Kerja</div></div>
+          <div class="col-4"><div class="stat-value text-success-strong"><%= h.duration(rekap.menitLembur) %></div><div class="stat-label">Lembur</div></div>
+        </div>
+
+        <hr class="soft-divider">
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small text-muted">Progres kehadiran bulan ini</span>
+          <span class="small fw-semibold"><%= rekap.hariHadir %> dari <%= hariKerja %> hari kerja</span>
+        </div>
+        <div class="progress progress-thin mb-3">
+          <div class="progress-bar bg-success" style="width: <%= Math.min(100, h.percent(rekap.hariHadir, hariKerja)) %>%"></div>
+        </div>
+
+        <dl class="mb-0">
+          <div class="detail-row"><dt>Terlambat</dt><dd class="text-warning-strong"><%= rekap.terlambat %> hari (<%= rekap.terlambatMenit %> menit)</dd></div>
+          <div class="detail-row"><dt>Work From Home</dt><dd><%= rekap.hariWfh %> hari</dd></div>
+          <div class="detail-row"><dt>Total jam kerja</dt><dd class="num"><%= h.duration(rekap.menitKerja) %></dd></div>
+          <div class="detail-row"><dt>Total lembur</dt><dd class="num text-success-strong"><%= h.duration(rekap.menitLembur) %></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-clock-history me-1"></i>Riwayat Absensi</span></div>
+      <div class="table-responsive">
+        <table class="table table-hover table-compact mb-0">
+          <thead>
+            <tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th class="text-end">Durasi</th><th class="text-end">Lembur</th><th>Status</th><th>Foto</th></tr>
+          </thead>
+          <tbody>
+            <% if (!riwayat.length) { %>
+              <tr><td colspan="7"><div class="empty-state py-4"><i class="bi bi-inbox"></i><h6>Belum ada riwayat</h6></div></td></tr>
+            <% } %>
+            <% riwayat.forEach(function (a) {
+                 const meta = STATUS_ABSENSI[a.status] || { label: a.status, badge: 'secondary' };
+                 const hariIniRow = a.tanggal === h.today();
+                 const foto = a.foto_path ? '/' + String(a.foto_path).replace(/\\/g, '/') : null; %>
+              <tr <%= hariIniRow ? 'class="table-active"' : '' %>>
+                <td class="small">
+                  <%= h.dayName(a.tanggal).slice(0, 3) %>, <%= h.date(a.tanggal) %>
+                  <% if (hariIniRow) { %><span class="badge badge-status text-bg-info ms-1">Hari ini</span><% } %>
+                </td>
+                <td class="num small"><%= h.dotTime(a.jam_masuk) %></td>
+                <td class="num small"><%= h.dotTime(a.jam_pulang) %></td>
+                <td class="text-end num small"><%= a.durasi_menit ? h.duration(a.durasi_menit) : '-' %></td>
+                <td class="text-end num small <%= a.menit_lembur ? 'text-success-strong fw-semibold' : 'text-muted' %>">
+                  <%= a.menit_lembur ? h.duration(a.menit_lembur) : '-' %>
+                </td>
+                <td>
+                  <span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span>
+                  <% if (a.keterangan) { %>
+                    <div class="text-muted" style="font-size:.72rem"><%= a.keterangan %></div>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (foto) { %>
+                    <a href="<%= foto %>" target="_blank" rel="noopener" title="Lihat foto">
+                      <img src="<%= foto %>" alt="Foto absensi" class="foto-thumb">
+                    </a>
+                  <% } else { %>
+                    <span class="text-muted small">-</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var form = document.getElementById('formAbsen');
+    if (!form) return;
+
+    var status = document.getElementById('status');
+    var keterangan = document.getElementById('keterangan');
+    var tandaKeterangan = document.getElementById('tandaKeterangan');
+    var fileFoto = document.getElementById('foto');
+    var infoFoto = document.getElementById('infoFoto');
+    var previewWrap = document.getElementById('previewFotoWrap');
+    var preview = document.getElementById('previewFoto');
+
+    function perbaruiKeterangan() {
+      var perlu = status.value !== 'hadir';
+      tandaKeterangan.hidden = !perlu;
+      keterangan.required = perlu;
+    }
+    status.addEventListener('change', perbaruiKeterangan);
+    perbaruiKeterangan();
+
+    // Perkecil foto di perangkat (maks 1280px, JPEG) supaya unggahan tetap ringan.
+    function kompres(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onerror = function () { reject(new Error('Gagal membaca foto')); };
+        reader.onload = function () {
+          var img = new Image();
+          img.onerror = function () { reject(new Error('Foto tidak dapat diproses')); };
+          img.onload = function () {
+            var maks = 1280;
+            var skala = Math.min(1, maks / Math.max(img.width, img.height));
+            var kanvas = document.createElement('canvas');
+            kanvas.width = Math.round(img.width * skala);
+            kanvas.height = Math.round(img.height * skala);
+            kanvas.getContext('2d').drawImage(img, 0, 0, kanvas.width, kanvas.height);
+            kanvas.toBlob(function (blob) {
+              if (blob) resolve(blob);
+              else reject(new Error('Foto tidak dapat dikompresi'));
+            }, 'image/jpeg', 0.75);
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    fileFoto.addEventListener('change', function () {
+      var file = fileFoto.files && fileFoto.files[0];
+      if (!file) { previewWrap.classList.add('d-none'); return; }
+
+      infoFoto.textContent = 'Memproses foto...';
+
+      kompres(file).then(function (blob) {
+        var baru = new File([blob], 'absensi.jpg', { type: 'image/jpeg' });
+        try {
+          var transfer = new DataTransfer();
+          transfer.items.add(baru);
+          fileFoto.files = transfer.files;
+        } catch (e) {
+          infoFoto.textContent = 'Foto dikecilkan, namun pratinjau tidak bisa diperbarui di browser ini.';
+        }
+        preview.src = URL.createObjectURL(blob);
+        previewWrap.classList.remove('d-none');
+        infoFoto.textContent = 'Siap dikirim: ' + Math.round(blob.size / 1024) + ' KB setelah dikecilkan.';
+      }).catch(function (error) {
+        infoFoto.textContent = error.message + ' Foto akan dikirim apa adanya.';
+      });
+    });
+
+    // Jam absen ikut diperbarui saat halaman dibuka agar tidak tertinggal.
+    function segarkanJam() {
+      var d = new Date();
+      var jam = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      document.querySelectorAll('[data-jam-absen]').forEach(function (el) { el.value = jam; });
+    }
+    segarkanJam();
+    setInterval(segarkanJam, 30000);
+  })();
+</script>

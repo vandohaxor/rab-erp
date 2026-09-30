@@ -1,0 +1,10 @@
+<% if (flash) { %>
+  <div class="alert alert-<%= flash.type %> alert-dismissible fade show shadow-sm" role="alert">
+    <% if (flash.type === 'success') { %><i class="bi bi-check-circle-fill me-1"></i><% } %>
+    <% if (flash.type === 'danger') { %><i class="bi bi-exclamation-octagon-fill me-1"></i><% } %>
+    <% if (flash.type === 'warning') { %><i class="bi bi-exclamation-triangle-fill me-1"></i><% } %>
+    <% if (flash.type === 'info') { %><i class="bi bi-info-circle-fill me-1"></i><% } %>
+    <%= flash.message %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+  </div>
+<% } %>

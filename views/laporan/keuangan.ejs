@@ -1,0 +1,124 @@
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `<button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Cetak</button>`
+    }) %>
+
+<form method="get" class="card mb-4">
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label" for="tanggal_mulai">Dari Tanggal</label>
+        <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" value="<%= tanggalMulai %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="tanggal_selesai">Sampai Tanggal</label>
+        <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" value="<%= tanggalSelesai %>">
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-navy w-100"><i class="bi bi-funnel me-1"></i>Terapkan Filter</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6 col-xl-3">
+    <div class="card stat-card stat-success"><div class="card-body">
+      <div class="stat-label">Total Pemasukan</div>
+      <div class="stat-value num text-success-strong" style="font-size:1.05rem"><%= h.money(rekap.totalPemasukan) %></div>
+    </div></div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="card stat-card stat-danger"><div class="card-body">
+      <div class="stat-label">Total Pengeluaran</div>
+      <div class="stat-value num text-danger-strong" style="font-size:1.05rem"><%= h.money(rekap.totalPengeluaran) %></div>
+    </div></div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="card stat-card"><div class="card-body">
+      <div class="stat-label">Laba / Rugi</div>
+      <div class="stat-value num <%= rekap.labaBersih >= 0 ? 'text-navy' : 'text-danger-strong' %>" style="font-size:1.05rem"><%= h.money(rekap.labaBersih) %></div>
+    </div></div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="card stat-card stat-warning"><div class="card-body">
+      <div class="stat-label">Saldo Akhir Periode</div>
+      <div class="stat-value num text-warning-strong" style="font-size:1.05rem"><%= h.money(arusKas.saldoAkhir) %></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><span><i class="bi bi-graph-up-arrow me-1"></i>Komposisi Pemasukan</span></div>
+      <div class="table-responsive">
+        <table class="table table-sm table-compact mb-0">
+          <thead><tr><th>Kategori</th><th class="text-end">Jumlah</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            <% const totalIn = perKategoriMasuk.reduce((a, k) => a + Number(k.total), 0) || 1; %>
+            <% if (!perKategoriMasuk.length) { %>
+              <tr><td colspan="3" class="text-center text-muted small py-3">Tidak ada pemasukan</td></tr>
+            <% } %>
+            <% perKategoriMasuk.forEach(function (k) { %>
+              <tr>
+                <td class="small"><%= k.kategori %></td>
+                <td class="text-end num small"><%= h.money(k.total) %></td>
+                <td class="text-end num small text-muted"><%= ((Number(k.total) / totalIn) * 100).toFixed(1) %>%</td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><span><i class="bi bi-graph-down-arrow me-1"></i>Komposisi Pengeluaran</span></div>
+      <div class="table-responsive">
+        <table class="table table-sm table-compact mb-0">
+          <thead><tr><th>Kategori</th><th class="text-end">Jumlah</th><th class="text-end">%</th></tr></thead>
+          <tbody>
+            <% const totalOut = perKategoriKeluar.reduce((a, k) => a + Number(k.total), 0) || 1; %>
+            <% if (!perKategoriKeluar.length) { %>
+              <tr><td colspan="3" class="text-center text-muted small py-3">Tidak ada pengeluaran</td></tr>
+            <% } %>
+            <% perKategoriKeluar.forEach(function (k) { %>
+              <tr>
+                <td class="small"><%= k.kategori %></td>
+                <td class="text-end num small"><%= h.money(k.total) %></td>
+                <td class="text-end num small text-muted"><%= ((Number(k.total) / totalOut) * 100).toFixed(1) %>%</td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header"><span><i class="bi bi-arrow-left-right me-1"></i>Arus Kas</span></div>
+      <div class="table-responsive">
+        <table class="table table-sm table-compact mb-0">
+          <thead><tr><th>Periode</th><th class="text-end">Masuk</th><th class="text-end">Keluar</th></tr></thead>
+          <tbody>
+            <% if (!arusKas.bulan.length) { %>
+              <tr><td colspan="3" class="text-center text-muted small py-3">Tidak ada data arus kas</td></tr>
+            <% } %>
+            <% arusKas.bulan.forEach(function (b) { %>
+              <tr>
+                <td class="small"><%= b.periode %></td>
+                <td class="text-end num small text-success-strong"><%= h.money(b.pemasukan) %></td>
+                <td class="text-end num small text-danger-strong"><%= h.money(b.pengeluaran) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

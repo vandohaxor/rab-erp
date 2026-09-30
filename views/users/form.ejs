@@ -1,0 +1,109 @@
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: passwordAwal ? '' : `<a href="/users" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Kembali</a>`
+    }) %>
+
+<% if (passwordAwal) { %>
+  <div class="alert alert-success">
+    <h6 class="fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Pengguna berhasil dibuat</h6>
+    <p class="mb-2">Sampaikan password awal berikut kepada pengguna.</p>
+    <div class="alert alert-light border mb-0 d-inline-block">
+      <code class="fs-5"><%= passwordAwal %></code>
+    </div>
+    <p class="small text-muted mt-2 mb-0">Pengguna langsung dapat masuk dengan password ini, tanpa wajib menggantinya.</p>
+  </div>
+<% } %>
+
+<% if (errors && errors.length) { %>
+  <div class="alert alert-danger">
+    <div class="fw-semibold mb-1"><i class="bi bi-exclamation-octagon-fill me-1"></i>Periksa kembali isian berikut:</div>
+    <ul class="mb-0 ps-3"><% errors.forEach(function (e) { %><li><%= e.msg %></li><% }); %></ul>
+  </div>
+<% } %>
+
+<form method="post" action="<%= pengguna ? `/users/${pengguna.id}?_method=PUT` : '/users/tambah' %>" novalidate data-dirty-guard>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header"><span><i class="bi bi-person-badge me-1"></i>Informasi Akun</span></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="nama">Nama Pengguna <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="nama" name="nama" value="<%= values.nama || '' %>" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="email">Email (untuk login) <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" id="email" name="email" value="<%= values.email || '' %>" required>
+              <div class="form-text">Dipakai untuk masuk ke sistem dan harus unik.</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="karyawan_id">Tautkan ke Data Karyawan</label>
+              <select class="form-select" id="karyawan_id" name="karyawan_id">
+                <option value="">- Tidak tautkan -</option>
+                <% karyawanTersedia.forEach(function (k) { %>
+                  <option value="<%= k.id %>" <%= String(values.karyawan_id) === String(k.id) ? 'selected' : '' %>>
+                    <%= k.nip %> - <%= k.nama_lengkap %> (<%= k.jabatan || 'Tanpa jabatan' %>)
+                  </option>
+                <% }); %>
+              </select>
+              <div class="form-text">
+                Wajib untuk role Karyawan agar dapat absen dan melihat slip gaji.
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="password">
+                <%= pengguna ? 'Password Baru' : 'Password Awal' %>
+                <% if (!pengguna) { %><span class="text-muted fw-normal">(kosongkan untuk membuat otomatis)</span><% } %>
+              </label>
+              <input type="text" class="form-control" id="password" name="password"
+                     autocomplete="new-password" placeholder="Minimal 8 karakter">
+              <div class="form-text">
+                Password dapat dilihat kembali oleh Superadmin pada halaman Manajemen Pengguna.
+                <% if (pengguna) { %> Biarkan kosong bila tidak ingin mengganti. <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card mb-4">
+        <div class="card-header"><span><i class="bi bi-shield-lock me-1"></i>Peran &amp; Status</span></div>
+        <div class="card-body">
+          <label class="form-label">Peran Pengguna <span class="text-danger">*</span></label>
+          <% roleList.forEach(function (role) { const m = roleMeta[role]; %>
+            <div class="form-check border rounded p-3 mb-2 <%= values.role === role ? 'border-primary bg-light' : '' %>">
+              <input class="form-check-input" type="radio" name="role" id="role_<%= role %>"
+                     value="<%= role %>" <%= values.role === role ? 'checked' : '' %> required>
+              <label class="form-check-label w-100" for="role_<%= role %>">
+                <span class="badge text-bg-<%= m.badge %>"><%= m.label %></span>
+                <div class="small text-muted mt-1"><%= m.deskripsi %></div>
+              </label>
+            </div>
+          <% }); %>
+
+          <label class="form-label mt-3" for="status">Status Akun</label>
+          <select class="form-select" id="status" name="status">
+            <option value="aktif" <%= values.status === 'aktif' ? 'selected' : '' %>>Aktif - dapat masuk sistem</option>
+            <option value="nonaktif" <%= values.status === 'nonaktif' ? 'selected' : '' %>>Nonaktif - diblokir masuk</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-navy">
+              <i class="bi bi-save me-1"></i><%= pengguna ? 'Simpan Perubahan' : 'Buat Pengguna' %>
+            </button>
+            <a href="/users" class="btn btn-outline-secondary">Batal</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>

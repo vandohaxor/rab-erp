@@ -1,0 +1,18 @@
+<div class="print-head">
+  <div class="d-flex align-items-center gap-3">
+    <% if (company.logo) { %>
+      <img src="<%= company.logo %>" alt="Logo <%= company.nama %>" style="width:62px;height:62px;object-fit:contain">
+    <% } %>
+    <div class="lh-sm">
+      <h3 class="mb-0"><%= company.badan %></h3>
+      <p class="mb-0 small"><%= company.alamatLengkap %></p>
+      <% if (typeof judul !== 'undefined' && judul) { %>
+        <p class="mb-0 small"><strong><%= judul %></strong></p>
+      <% } %>
+      <% if (typeof periode !== 'undefined' && periode) { %>
+        <p class="mb-0 small"><%= periode %></p>
+      <% } %>
+    </div>
+  </div>
+  <hr>
+</div>

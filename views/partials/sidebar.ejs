@@ -1,0 +1,100 @@
+<%
+  const menu = [
+    { key: 'dashboard', label: 'Dashboard', icon: 'bi-speedometer2', href: '/' },
+    { key: 'karyawan', label: 'Data Karyawan', icon: 'bi-people-fill', href: '/karyawan', group: 'Kepegawaian' },
+    { key: 'users', label: 'Manajemen Pengguna', icon: 'bi-person-gear', href: '/users' },
+    { key: 'absensi', label: 'Absensi', icon: 'bi-calendar2-check-fill', href: '/absensi', group: 'Absensi & Gaji' },
+    { key: 'absensi-saya', label: 'Absensi Saya', icon: 'bi-fingerprint', href: '/absensi/saya' },
+    { key: 'pengajuan', label: 'Pengajuan Izin', icon: 'bi-envelope-paper-fill', href: '/pengajuan' },
+    { key: 'keuangan', label: 'Keuangan', icon: 'bi-cash-coin', href: '/keuangan', group: 'Keuangan' },
+    { key: 'payroll', label: 'Payroll', icon: 'bi-wallet2', href: '/payroll' },
+    { key: 'slip-gaji', label: 'Slip Gaji Saya', icon: 'bi-receipt', href: '/payroll/slip-saya' },
+    { key: 'laporan', label: 'Laporan', icon: 'bi-clipboard-data-fill', href: '/laporan', group: 'Laporan' },
+    { key: 'pengaturan', label: 'Pengaturan', icon: 'bi-sliders', href: '/pengaturan' },
+    { key: 'audit', label: 'Log Aktivitas', icon: 'bi-shield-check', href: '/pengaturan/audit' },
+  ];
+  const boleh = (key) => (typeof can !== 'undefined' ? can(user.role, key) : true);
+%>
+<%
+  // Kelompokkan menu berdasarkan field group agar sidebar rapi.
+  let groups = [];
+  let unlabeled = [];
+  let lastGroup = null;
+  for (const item of menu) {
+    if (!boleh(item.key)) continue;
+    if (item.group) {
+      if (item.group !== lastGroup) {
+        groups.push({ heading: item.group, items: [] });
+        lastGroup = item.group;
+      }
+      groups[groups.length - 1].items.push(item);
+    } else if (!groups.length && !unlabeled.length && !item.group) {
+      unlabeled.push(item);
+    } else {
+      groups.push({ heading: null, items: [item] });
+    }
+  }
+%>
+
+<nav class="app-sidebar d-none d-lg-flex flex-column">
+  <div class="sidebar-brand">
+    <span class="brand-mark brand-mark-lg brand-mark-logo">
+      <% if (company.logo) { %><img src="<%= company.logo %>" alt="Logo <%= company.nama %>" onerror="RabLogo(this)"><% } %><i class="bi bi-buildings-fill"></i>
+    </span>
+    <div class="lh-1">
+      <div class="brand-name">RAJAWALI ATAS BUMI</div>
+      <div class="brand-sub">Sistem Informasi Manajemen</div>
+    </div>
+  </div>
+
+  <div class="sidebar-scroll">
+    <ul class="nav flex-column sidebar-nav">
+      <% groups.forEach(function (group) { %>
+        <% if (group.heading) { %>
+          <li class="nav-heading"><%= group.heading %></li>
+        <% } %>
+        <% group.items.forEach(function (item) { %>
+          <% const aktif = item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href); %>
+          <li class="nav-item">
+            <a class="nav-link <%= aktif ? 'active' : '' %>" href="<%= item.href %>">
+              <i class="bi <%= item.icon %>"></i>
+              <span><%= item.label %></span>
+            </a>
+          </li>
+        <% }); %>
+      <% }); %>
+    </ul>
+  </div>
+
+  <div class="sidebar-foot">
+    <div class="small text-white-50">Hak akses</div>
+    <div class="fw-semibold text-white"><%= user ? user.roleLabel : '' %></div>
+    <div class="text-white-50" style="font-size:.72rem"><%= user && user.jabatan ? user.jabatan : company.badan %></div>
+  </div>
+</nav>
+
+<div class="offcanvas offcanvas-start app-offcanvas" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="sidebarMenuLabel">
+      <span class="brand-mark me-2 brand-mark-logo">
+        <% if (company.logo) { %><img src="<%= company.logo %>" alt="Logo <%= company.nama %>" onerror="RabLogo(this)"><% } %><i class="bi bi-buildings-fill"></i>
+      </span>RAJAWALI ATAS BUMI
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
+  </div>
+  <div class="offcanvas-body px-0">
+    <ul class="nav flex-column sidebar-nav">
+      <% groups.forEach(function (group) { %>
+        <% if (group.heading) { %><li class="nav-heading"><%= group.heading %></li><% } %>
+        <% group.items.forEach(function (item) { %>
+          <% const aktif = item.href === '/' ? currentPath === '/' : currentPath.startsWith(item.href); %>
+          <li class="nav-item">
+            <a class="nav-link <%= aktif ? 'active' : '' %>" href="<%= item.href %>">
+              <i class="bi <%= item.icon %>"></i><span><%= item.label %></span>
+            </a>
+          </li>
+        <% }); %>
+      <% }); %>
+    </ul>
+  </div>
+</div>

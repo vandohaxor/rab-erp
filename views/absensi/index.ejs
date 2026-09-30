@@ -1,0 +1,188 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-success">
+      <span class="stat-icon"><i class="bi bi-person-check"></i></span>
+      <div>
+        <div class="stat-label">Hadir</div>
+        <div class="stat-value"><%= rekap.hadir %></div>
+        <div class="stat-meta">dari <%= rekap.totalKaryawan %> karyawan</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-warning">
+      <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+      <div>
+        <div class="stat-label">Belum Absen Masuk</div>
+        <div class="stat-value"><%= rekap.belumAbsen %></div>
+        <div class="stat-meta">tidak ada catatan hari ini</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-info">
+      <span class="stat-icon"><i class="bi bi-clock"></i></span>
+      <div>
+        <div class="stat-label">Belum Pulang</div>
+        <div class="stat-value"><%= rekap.belumPulang %></div>
+        <div class="stat-meta">masih di lokasi</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-gold">
+      <span class="stat-icon"><i class="bi bi-hourglass-bottom"></i></span>
+      <div>
+        <div class="stat-label">Lembur Hari Ini</div>
+        <div class="stat-value"><%= h.duration(rekap.menitLembur) %></div>
+        <div class="stat-meta">total dari yang sudah pulang</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="card-header">
+    <form method="get" class="row g-2 align-items-center w-100">
+      <div class="col-md-3">
+        <label class="form-label small mb-0">Tanggal</label>
+        <input type="date" class="form-control form-control-sm" name="tanggal" value="<%= filter.tanggal %>" data-auto-submit>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Cari Karyawan</label>
+        <input type="text" class="form-control form-control-sm" name="q" value="<%= filter.q %>" placeholder="Nama atau NIP...">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-0">Departemen</label>
+        <select class="form-select form-select-sm" name="departemen_id" data-auto-submit>
+          <option value="">Semua</option>
+          <% departemen.forEach(function (d) { %>
+            <option value="<%= d.id %>" <%= String(filter.departemenId) === String(d.id) ? 'selected' : '' %>><%= d.nama %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-navy btn-sm w-100"><i class="bi bi-funnel me-1"></i>Terapkan</button>
+        <a href="/absensi" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr>
+          <th>NIP</th><th>Nama</th><th>Departemen</th>
+          <th>Masuk</th><th>Pulang</th><th class="text-end">Durasi</th><th class="text-end">Lembur</th>
+          <th>Status &amp; Keterangan</th><th>Foto</th><th class="text-end no-print">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!karyawan.length) { %>
+          <tr><td colspan="10"><div class="empty-state"><i class="bi bi-inbox"></i><h6>Data tidak ditemukan</h6></div></td></tr>
+        <% } %>
+
+        <% karyawan.forEach(function (k) {
+             const meta = STATUS_ABSENSI[k.status] || (k.absensi_id ? { label: k.status, badge: 'secondary' } : null); %>
+          <tr>
+            <td class="nip-cell small"><%= k.nip %></td>
+            <td class="small fw-semibold"><%= k.nama_lengkap %></td>
+            <td class="small text-muted"><%= k.departemen || '-' %></td>
+            <td class="num small"><%= h.dotTime(k.jam_masuk) %></td>
+            <td class="num small"><%= h.dotTime(k.jam_pulang) %></td>
+            <td class="text-end num small"><%= k.durasi_menit ? h.duration(k.durasi_menit) : '-' %></td>
+            <td class="text-end num small <%= k.menit_lembur ? 'text-success-strong fw-semibold' : 'text-muted' %>">
+              <%= k.menit_lembur ? h.duration(k.menit_lembur) : '-' %>
+            </td>
+            <td class="small">
+              <% if (meta) { %>
+                <span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span>
+                <% if (k.sumber === 'atasan') { %>
+                  <span class="badge badge-status text-bg-light border text-muted">input atasan</span>
+                <% } %>
+                <% if (k.keterangan) { %>
+                  <div class="text-muted" style="font-size:.72rem"><%= k.keterangan %></div>
+                <% } %>
+              <% } else { %>
+                <span class="badge badge-status text-bg-light border text-muted">Belum absen</span>
+              <% } %>
+            </td>
+            <td>
+              <% if (k.fotoUrl) { %>
+                <a href="<%= k.fotoUrl %>" target="_blank" rel="noopener" title="Lihat foto absensi">
+                  <img src="<%= k.fotoUrl %>" alt="Foto absensi <%= k.nama_lengkap %>" class="foto-thumb">
+                </a>
+              <% } else { %>
+                <span class="text-muted small">-</span>
+              <% } %>
+            </td>
+            <td class="text-end no-print">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-pencil"></i></button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><h6 class="dropdown-header">Catat Kehadiran</h6></li>
+                  <li>
+                    <form method="post" action="/absensi/manual" class="px-3 py-1">
+                      <input type="hidden" name="karyawan_id" value="<%= k.id %>">
+                      <input type="hidden" name="tanggal" value="<%= filter.tanggal %>">
+                      <div class="row g-1 mb-1">
+                        <div class="col-6">
+                          <input type="time" class="form-control form-control-sm" name="jam_masuk"
+                                 value="<%= k.jam_masuk || jadwal.jamMasuk %>" required>
+                        </div>
+                        <div class="col-6">
+                          <input type="time" class="form-control form-control-sm" name="jam_pulang" value="<%= k.jam_pulang || '' %>">
+                        </div>
+                      </div>
+                      <button type="submit" class="btn btn-navy btn-sm w-100 mb-2">
+                        <i class="bi bi-check-lg me-1"></i>Simpan Kehadiran
+                      </button>
+                    </form>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Ubah Status</h6></li>
+                  <% ['izin', 'sakit', 'cuti', 'wfh'].forEach(function (s) {
+                       const m = STATUS_ABSENSI[s]; %>
+                    <li>
+                      <form method="post" action="/absensi/catat">
+                        <input type="hidden" name="karyawan_id" value="<%= k.id %>">
+                        <input type="hidden" name="tanggal" value="<%= filter.tanggal %>">
+                        <input type="hidden" name="status" value="<%= s %>">
+                        <button type="submit" class="dropdown-item small">
+                          <i class="bi <%= m.icon %> me-2"></i>Tandai <%= m.label %>
+                        </button>
+                      </form>
+                    </li>
+                  <% }); %>
+                  <% if (k.absensi_id) { %>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <form method="post" action="/absensi/<%= k.absensi_id %>?_method=DELETE">
+                        <button type="submit" class="dropdown-item small text-danger"
+                                data-confirm="Hapus catatan absensi ini?">
+                          <i class="bi bi-trash me-2"></i>Hapus Catatan
+                        </button>
+                      </form>
+                    </li>
+                  <% } %>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-footer small text-muted">
+    <i class="bi bi-info-circle me-1"></i>
+    Jadwal kerja saat ini <strong><%= h.dotTime(jadwal.jamMasuk) %> - <%= h.dotTime(jadwal.jamPulang) %></strong>
+    (toleransi <%= jadwal.toleransi %> menit). Durasi di atas jam pulang dihitung sebagai lembur.
+    <% if (denganFoto) { %>
+      <div class="mt-1"><i class="bi bi-camera me-1"></i><%= denganFoto %> karyawan melampirkan foto absensi pada tanggal ini.</div>
+    <% } %>
+  </div>
+</div>

@@ -1,0 +1,135 @@
+<%
+  const isEdit = Boolean(transaksi);
+  const v = values || {};
+  const val = (key, fallback = '') => (v[key] === null || v[key] === undefined ? fallback : v[key]);
+%>
+
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs }) %>
+
+<% if (errors && errors.length) { %>
+  <div class="alert alert-danger">
+    <div class="fw-semibold mb-1"><i class="bi bi-exclamation-octagon-fill me-1"></i>Periksa kembali isian berikut:</div>
+    <ul class="mb-0 ps-3"><% errors.forEach(function (e) { %><li><%= e.msg %></li><% }); %></ul>
+  </div>
+<% } %>
+
+<form method="post" action="<%= isEdit ? `/keuangan/transaksi/${transaksi.id}?_method=PUT` : '/keuangan/transaksi/tambah' %>" novalidate data-dirty-guard>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header"><span><i class="bi bi-receipt-cutoff me-1"></i>Detail Transaksi</span></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="jenis">Jenis Transaksi <span class="text-danger">*</span></label>
+              <select class="form-select" id="jenis" name="jenis" required onchange="location.href='/keuangan/transaksi/tambah?jenis='+this.value">
+                <option value="pemasukan" <%= jenis === 'pemasukan' ? 'selected' : '' %>>Pemasukan (uang masuk)</option>
+                <option value="pengeluaran" <%= jenis === 'pengeluaran' ? 'selected' : '' %>>Pengeluaran (uang keluar)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="tanggal">Tanggal Transaksi <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="tanggal" name="tanggal" value="<%= val('tanggal', h.today()) %>" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="kategori_id">Kategori <span class="text-danger">*</span></label>
+              <select class="form-select" id="kategori_id" name="kategori_id" required>
+                <option value="">- Pilih kategori -</option>
+                <% kategori.forEach(function (k) { %>
+                  <option value="<%= k.id %>" <%= String(val('kategori_id')) === String(k.id) ? 'selected' : '' %>>
+                    <%= k.nama %>
+                  </option>
+                <% }); %>
+              </select>
+              <div class="form-text">
+                Belum ada kategori? <a href="/keuangan/kategori" target="_blank">Tambah kategori baru</a>.
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="jumlah">Nominal <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">Rp</span>
+                <input type="text" class="form-control num" id="jumlah" name="jumlah"
+                       data-rupiah value="<%= h.toPlainInput(val('jumlah', 0)) %>" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="metode">Metode Pembayaran</label>
+              <select class="form-select" id="metode" name="metode">
+                <% METODE_PEMBAYARAN.forEach(function (m) { %>
+                  <option value="<%= m %>" <%= val('metode', 'transfer') === m ? 'selected' : '' %>>
+                    <%= h.capitalize(m) %>
+                  </option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="pic">Penanggung Jawab (PIC)</label>
+              <input type="text" class="form-control" id="pic" name="pic" value="<%= val('pic') %>"
+                     placeholder="Nama penanggung jawab transaksi">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="no_referensi">Nomor Referensi</label>
+              <input type="text" class="form-control" id="no_referensi" name="no_referensi"
+                     value="<%= val('no_referensi') %>" placeholder="No. invoice / kwitansi / nota">
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="keterangan">Keterangan</label>
+              <textarea class="form-control" id="keterangan" name="keterangan" rows="3"
+                        placeholder="Uraian lengkap transaksi untuk keperluan pembukuan."><%= val('keterangan') %></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header"><span><i class="bi bi-calculator me-1"></i>Ringkasan</span></div>
+        <div class="card-body text-center">
+          <div class="stat-label mb-1">Nominal Transaksi</div>
+          <div class="stat-value num" id="ringkasan" style="font-size:1.35rem">-</div>
+          <div class="text-muted small mt-2 text-uppercase" style="letter-spacing:.06em">
+            <%= jenis %>
+          </div>
+          <hr class="soft-divider">
+          <div class="d-flex justify-content-between small">
+            <span class="text-muted">Tanggal</span>
+            <strong><%= h.date(val('tanggal', h.today())) %></strong>
+          </div>
+          <div class="d-flex justify-content-between small mt-1">
+            <span class="text-muted">Kategori</span>
+            <strong id="previewKategori">-</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-navy"><i class="bi bi-save me-1"></i>Simpan Transaksi</button>
+            <a href="/keuangan/transaksi" class="btn btn-outline-secondary">Batal</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<script>
+  (function () {
+    var jumlah = document.getElementById('jumlah');
+    var output = document.getElementById('ringkasan');
+    var kategori = document.getElementById('kategori_id');
+    var preview = document.getElementById('previewKategori');
+    var fmt = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+
+    var calc = function () {
+      output.textContent = fmt.format(Number(jumlah.dataset.rawValue || 0));
+      preview.textContent = kategori.options[kategori.selectedIndex] ? kategori.options[kategori.selectedIndex].text : '-';
+    };
+    jumlah.addEventListener('input', calc);
+    kategori.addEventListener('change', calc);
+    calc();
+  })();
+</script>

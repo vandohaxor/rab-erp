@@ -1,0 +1,174 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-info">
+      <span class="stat-icon"><i class="bi bi-people-fill"></i></span>
+      <div>
+        <div class="stat-label">Total Karyawan</div>
+        <div class="stat-value"><%= statistik.total %></div>
+        <div class="stat-meta">seluruh riwayat</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-success">
+      <span class="stat-icon"><i class="bi bi-person-check"></i></span>
+      <div>
+        <div class="stat-label">Aktif</div>
+        <div class="stat-value"><%= statistik.aktif || 0 %></div>
+        <div class="stat-meta">tetap bekerja</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-warning">
+      <span class="stat-icon"><i class="bi bi-person-dash"></i></span>
+      <div>
+        <div class="stat-label">Resign</div>
+        <div class="stat-value"><%= statistik.resign || 0 %></div>
+        <div class="stat-meta">tidak aktif lagi</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-gold">
+      <span class="stat-icon"><i class="bi bi-cash-stack"></i></span>
+      <div>
+        <div class="stat-label">Payroll Bulanan</div>
+        <div class="stat-value num" style="font-size:1.05rem"><%= h.money(statistik.payroll_bulanan) %></div>
+        <div class="stat-meta">gaji + tunjangan tetap</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card table-card mb-4">
+  <div class="card-header">
+    <form method="get" class="row g-2 align-items-center w-100">
+      <div class="col-md-4">
+        <input type="text" class="form-control form-control-sm" name="q"
+               value="<%= filter.q || '' %>" placeholder="Cari nama, NIP, atau jabatan...">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" name="departemen_id" data-auto-submit>
+          <option value="">Semua Departemen</option>
+          <% departemen.forEach(function (d) { %>
+            <option value="<%= d.id %>" <%= String(filter.departemen_id) === String(d.id) ? 'selected' : '' %>>
+              <%= d.nama %>
+            </option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" name="status" data-auto-submit>
+          <option value="">Semua Status</option>
+          <% Object.keys(STATUS_KARYAWAN).forEach(function (k) { %>
+            <option value="<%= k %>" <%= filter.status === k ? 'selected' : '' %>><%= STATUS_KARYAWAN[k].label %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-navy btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
+        <a href="/karyawan" class="btn btn-outline-secondary btn-sm" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" id="tabelKaryawan">
+      <thead>
+        <tr>
+          <th>NIP</th>
+          <th>Nama Lengkap</th>
+          <th>Departemen</th>
+          <th>Jabatan</th>
+          <th>Kontrak</th>
+          <th>Masuk</th>
+          <th class="text-end">Gaji Pokok</th>
+          <th>Akun</th>
+          <th>Status</th>
+          <th class="text-end no-print">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr>
+            <td colspan="10">
+              <div class="empty-state">
+                <i class="bi bi-person-x"></i>
+                <h6>Data tidak ditemukan</h6>
+                <p class="small mb-0">Coba ubah kata kunci atau filter pencarian Anda.</p>
+              </div>
+            </td>
+          </tr>
+        <% } %>
+
+        <% rows.forEach(function (k) {
+             const st = STATUS_KARYAWAN[k.status_karyawan] || { label: k.status_karyawan, badge: 'secondary' }; %>
+          <tr>
+            <td class="nip-cell small fw-semibold"><%= k.nip %></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge-dot"><%= h.initials(k.nama_lengkap) %></span>
+                <div class="lh-sm">
+                  <a href="/karyawan/<%= k.id %>" class="fw-semibold text-navy text-decoration-none"><%= k.nama_lengkap %></a>
+                  <div class="text-muted" style="font-size:.74rem"><%= k.email || k.no_hp || '-' %></div>
+                </div>
+              </div>
+            </td>
+            <td class="small"><%= k.departemen || '-' %></td>
+            <td class="small"><%= k.jabatan || '-' %></td>
+            <td class="small text-muted"><%= k.tipe_kontrak %></td>
+            <td class="small"><%= h.date(k.tanggal_masuk) %></td>
+            <td class="text-end num small"><%= h.money(k.gaji_pokok) %></td>
+            <td>
+              <% if (k.user_email) { %>
+                <span class="badge badge-status text-bg-light border text-muted" title="<%= k.user_email %>">
+                  <i class="bi bi-person-check me-1"></i><%= k.user_role %>
+                </span>
+              <% } else { %>
+                <span class="badge badge-status text-bg-light border text-muted">Belum ada</span>
+              <% } %>
+            </td>
+            <td><span class="badge badge-status text-bg-<%= st.badge %>"><%= st.label %></span></td>
+            <td class="text-end no-print">
+              <div class="btn-group btn-group-sm">
+                <a href="/karyawan/<%= k.id %>" class="btn btn-outline-primary" title="Detail"><i class="bi bi-eye"></i></a>
+                <a href="/karyawan/<%= k.id %>/edit" class="btn btn-outline-primary" title="Ubah"><i class="bi bi-pencil-square"></i></a>
+                <form method="post" action="/karyawan/<%= k.id %>?_method=DELETE" class="d-inline"
+                      data-confirm="Hapus data karyawan <%= k.nama_lengkap %>? Tindakan ini tidak dapat dibatalkan.">
+                  <button type="submit" class="btn btn-outline-danger" title="Hapus"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (pagination.totalPages > 1) { %>
+    <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span class="small text-muted">
+        Menampilkan <%= (pagination.page - 1) * pagination.limit + 1 %>-<%= Math.min(pagination.page * pagination.limit, pagination.total) %>
+        dari <%= pagination.total %> karyawan
+      </span>
+      <nav aria-label="Navigasi halaman">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <%= pagination.page <= 1 ? 'disabled' : '' %>">
+            <a class="page-link" href="?<%= new URLSearchParams({ ...filter, page: pagination.page - 1 }).toString() %>">Sebelumnya</a>
+          </li>
+          <% for (let p = 1; p <= pagination.totalPages; p += 1) { %>
+            <li class="page-item <%= p === pagination.page ? 'active' : '' %>">
+              <a class="page-link" href="?<%= new URLSearchParams({ ...filter, page: p }).toString() %>"><%= p %></a>
+            </li>
+          <% } %>
+          <li class="page-item <%= pagination.page >= pagination.totalPages ? 'disabled' : '' %>">
+            <a class="page-link" href="?<%= new URLSearchParams({ ...filter, page: pagination.page + 1 }).toString() %>">Berikutnya</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  <% } %>
+</div>

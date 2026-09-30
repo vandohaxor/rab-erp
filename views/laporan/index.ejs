@@ -1,0 +1,28 @@
+<%
+  const menu = [
+    { href: '/laporan/perusahaan', icon: 'bi-speedometer2', title: 'Ringkasan Perusahaan', desc: 'Ikhtisar SDM, payroll, dan keuangan tahunan' },
+    { href: '/laporan/absensi', icon: 'bi-calendar-check', title: 'Laporan Absensi', desc: 'Rekap kehadiran, izin, sakit, dan lembur' },
+    { href: '/laporan/lembur', icon: 'bi-clock-history', title: 'Laporan Lembur', desc: 'Detail jam dan nilai lembur karyawan' },
+    { href: '/laporan/payroll', icon: 'bi-cash-stack', title: 'Laporan Penggajian', desc: 'Rekap gaji dan slip seluruh karyawan' },
+    { href: '/laporan/karyawan', icon: 'bi-people', title: 'Laporan Karyawan', desc: 'Daftar karyawan dan kompensasi' },
+    { href: '/laporan/keuangan', icon: 'bi-journal-text', title: 'Laporan Keuangan', desc: 'Laba rugi, arus kas, dan per kategori' },
+  ];
+%>
+
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: '' }) %>
+
+<div class="row g-3">
+  <% menu.forEach(function (m) { %>
+    <div class="col-md-6 col-xl-4">
+      <a href="<%= m.href %>" class="card text-decoration-none h-100 report-tile">
+        <div class="card-body d-flex gap-3">
+          <span class="report-icon"><i class="bi <%= m.icon %>"></i></span>
+          <div>
+            <h6 class="mb-1 text-navy"><%= m.title %></h6>
+            <p class="small text-muted mb-0"><%= m.desc %></p>
+          </div>
+        </div>
+      </a>
+    </div>
+  <% }); %>
+</div>

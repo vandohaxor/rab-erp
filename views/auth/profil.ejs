@@ -1,0 +1,97 @@
+<%- include('../partials/page-head', {
+      title: 'Profil Saya',
+      subtitle: 'Informasi akun dan data kepegawaian Anda'    }) %>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-body text-center">
+        <span class="avatar avatar-lg mb-3"><%= h.initials(karyawan ? karyawan.nama_lengkap : user.nama) %></span>
+        <h5 class="mb-1 text-navy"><%= user.nama %></h5>
+        <p class="text-muted small mb-2"><%= karyawan ? karyawan.jabatan : '-' %></p>
+        <span class="badge text-bg-<%= user.roleBadge %>"><%= user.roleLabel %></span>
+
+        <hr class="soft-divider">
+
+        <dl class="mb-0 text-start">
+          <div class="detail-row"><dt>Email</dt><dd class="text-break"><%= user.email %></dd></div>
+          <div class="detail-row"><dt>NIP</dt><dd><%= karyawan ? karyawan.nip : '-' %></dd></div>
+          <div class="detail-row"><dt>Departemen</dt><dd><%= user.departemen || '-' %></dd></div>
+          <div class="detail-row"><dt>Masuk kerja</dt><dd><%= karyawan ? h.date(karyawan.tanggal_masuk) : '-' %></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h6 class="text-navy mb-3"><i class="bi bi-shield-check me-1"></i>Keamanan Akun</h6>
+        <a href="/ubah-password" class="btn btn-outline-primary w-100 btn-sm">
+          <i class="bi bi-key me-1"></i>Ubah Password
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <span><i class="bi bi-person-vcard me-1"></i>Data kontak yang dapat diperbarui</span>
+      </div>
+      <div class="card-body">
+        <% if (errors && errors.length) { %>
+          <div class="alert alert-danger py-2 px-3 small">
+            <% errors.forEach(function (e) { %><div><i class="bi bi-exclamation-octagon-fill me-1"></i><%= e.msg %></div><% }); %>
+          </div>
+        <% } %>
+
+        <% if (!karyawan) { %>
+          <div class="alert alert-info small">
+            <i class="bi bi-info-circle me-1"></i>
+            Akun Anda belum terhubung dengan data karyawan. Hubungi Superadmin untuk pemetaan akun.
+          </div>
+        <% } else { %>
+          <form method="post" action="/profil" class="row g-3" data-dirty-guard>
+            <div class="col-md-6">
+              <label class="form-label">Nama Lengkap</label>
+              <input type="text" class="form-control" value="<%= karyawan.nama_lengkap %>" readonly>
+              <div class="form-text">Perubahan nama dilakukan oleh bagian HRD.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Jabatan</label>
+              <input type="text" class="form-control" value="<%= karyawan.jabatan || '-' %>" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="no_hp">Nomor HP</label>
+              <input type="text" class="form-control" id="no_hp" name="no_hp"
+                     value="<%= values.no_hp || karyawan.no_hp || '' %>" placeholder="08xxxxxxxxxx">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="nama_bank">Nama Bank</label>
+              <input type="text" class="form-control" id="nama_bank" name="nama_bank"
+                     value="<%= values.nama_bank || karyawan.nama_bank || '' %>" placeholder="BCA, BRI, Mandiri...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="no_rekening">Nomor Rekening</label>
+              <input type="text" class="form-control num" id="no_rekening" name="no_rekening"
+                     value="<%= values.no_rekening || karyawan.no_rekening || '' %>" placeholder="Nomor rekening">
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="alamat">Alamat</label>
+              <textarea class="form-control" id="alamat" name="alamat" rows="2"><%= values.alamat || karyawan.alamat || '' %></textarea>
+            </div>
+            <div class="col-12">
+              <div class="alert alert-light border small mb-0">
+                <i class="bi bi-lock-fill me-1 text-navy"></i>
+                Untuk mengubah NIP, jabatan, departemen, atau komponen gaji, silakan ajukan ke Superadmin.
+              </div>
+            </div>
+            <div class="col-12 d-flex gap-2">
+              <button type="submit" class="btn btn-navy"><i class="bi bi-save me-1"></i>Simpan Perubahan</button>
+              <a href="/" class="btn btn-outline-secondary">Batal</a>
+            </div>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

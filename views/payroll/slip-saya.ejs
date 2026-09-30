@@ -1,0 +1,170 @@
+<%
+  const meta = STATUS_PAYROLL[slip.status] || { label: slip.status, badge: 'secondary' };
+%>
+
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+  <%- include('../partials/filter-periode', { periode: periode }) %>
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Cetak
+  </button>
+</div>
+
+<% if (pratinjau) { %>
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    <strong>Pratinjau.</strong> Payroll <%= h.monthName(periode.bulan) %> <%= periode.tahun %>
+    belum difinalisasi oleh Bagian Keuangan. Angka di bawah adalah estimasi berdasarkan data absensi saat ini
+    dan dapat berubah.
+  </div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="card">
+      <div class="card-header">
+        <span><i class="bi bi-receipt me-1"></i>Slip Gaji Saya</span>
+        <span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span>
+      </div>
+      <div class="card-body">
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="stat-label">Hari Hadir</div>
+            <div class="stat-value text-success-strong"><%= slip.hari_hadir %></div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-label">Izin / Sakit / Cuti</div>
+            <div class="stat-value text-warning-strong"><%= Number(slip.hari_izin) + Number(slip.hari_sakit) + Number(slip.hari_cuti) %></div>
+          </div>
+          <div class="col-6 col-md-3">
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-label">Total Lembur</div>
+            <div class="stat-value" style="font-size:1.05rem"><%= h.duration(slip.menit_lembur) %></div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h6 class="text-navy small text-uppercase border-bottom pb-2">Pendapatan</h6>
+            <table class="table table-sm table-compact mb-0">
+              <tbody>
+                <tr>
+                  <td class="small">Gaji pokok</td>
+                  <td class="text-end num small"><%= h.money(slip.gaji_pokok) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Tunjangan (<%= slip.hari_hadir %> hari x <%= h.money(slip.tunjangan_harian) %>)</td>
+                  <td class="text-end num small"><%= h.money(slip.total_tunjangan) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Nilai lembur <%= h.duration(slip.menit_lembur) %></td>
+                  <td class="text-end num small text-success-strong"><%= h.money(slip.nilai_lembur) %></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><td class="text-end">Total Pendapatan</td><td class="text-end num"><%= h.money(slip.total_pendapatan) %></td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-navy small text-uppercase border-bottom pb-2">Potongan</h6>
+            <table class="table table-sm table-compact mb-0">
+              <tbody>
+                <tr>
+                  <td class="small">Potongan absensi</td>
+                  <td class="text-end num small"><%= h.money(Math.max(0, Number(slip.gaji_pokok) - Number(slip.total_pendapatan) + Number(slip.total_tunjangan) + Number(slip.nilai_lembur))) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Kasbon</td>
+                  <td class="text-end num small"><%= h.money(slip.kasbon) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Potongan lain</td>
+                  <td class="text-end num small"><%= h.money(slip.potongan_lain) %></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><td class="text-end">Total Potongan</td><td class="text-end num"><%= h.money(slip.total_potongan) %></td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="stat-label">Gaji Bersih Diterima</div>
+            <div class="small text-muted">
+              <%= karyawan.nama_bank || '-' %> <%= karyawan.no_rekening || '' %>
+            </div>
+          </div>
+          <div class="stat-value num text-navy" style="font-size:1.5rem"><%= h.money(slip.gaji_bersih) %></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><span><i class="bi bi-clock-history me-1"></i>Detail Absensi Saya</span></div>
+      <div class="table-responsive">
+        <table class="table table-hover table-compact mb-0">
+          <thead>
+            <tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th class="text-end">Durasi</th><th class="text-end">Lembur</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <% if (!absensi.length) { %>
+              <tr><td colspan="6"><div class="empty-state py-4"><i class="bi bi-inbox"></i><h6>Belum ada data absensi bulan ini</h6></div></td></tr>
+            <% } %>
+            <% absensi.forEach(function (a) {
+                 const m = STATUS_ABSENSI[a.status] || { label: a.status, badge: 'secondary' }; %>
+              <tr>
+                <td class="small"><%= h.dayName(a.tanggal).slice(0, 3) %>, <%= h.date(a.tanggal) %></td>
+                <td class="num small"><%= h.dotTime(a.jam_masuk) %></td>
+                <td class="num small"><%= h.dotTime(a.jam_pulang) %></td>
+                <td class="text-end num small"><%= a.durasi_menit ? h.duration(a.durasi_menit) : '-' %></td>
+                <td class="text-end num small <%= a.menit_lembur ? 'text-success-strong fw-semibold' : 'text-muted' %>">
+                  <%= a.menit_lembur ? h.duration(a.menit_lembur) : '-' %>
+                </td>
+                <td><span class="badge badge-status text-bg-<%= m.badge %>"><%= m.label %></span></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-person-circle me-1"></i>Data Saya</span></div>
+      <div class="card-body text-center">
+        <span class="avatar avatar-lg mb-2"><%= h.initials(karyawan.nama_lengkap) %></span>
+        <h6 class="mb-1 text-navy"><%= karyawan.nama_lengkap %></h6>
+        <p class="text-muted small mb-3"><%= karyawan.nip %> &middot; <%= karyawan.jabatan || '-' %></p>
+        <dl class="mb-0 text-start">
+          <div class="detail-row"><dt>Gaji pokok</dt><dd class="num"><%= h.money(karyawan.gaji_pokok) %></dd></div>
+          <div class="detail-row"><dt>Tunjangan transport</dt><dd class="num"><%= h.money(karyawan.tunjangan_transport) %></dd></div>
+          <div class="detail-row"><dt>Tunjangan makan</dt><dd class="num"><%= h.money(karyawan.tunjangan_makan) %></dd></div>
+          <div class="detail-row"><dt>Total tunjangan harian</dt><dd class="num"><%= h.money(Number(karyawan.tunjangan_transport) + Number(karyawan.tunjangan_makan)) %></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-info-circle me-1"></i>Perhitungan Lembur</span></div>
+      <div class="card-body">
+        <dl class="mb-0">
+          <div class="detail-row"><dt>Tarif dasar lembur</dt><dd class="num"><%= h.money(slip.dasar_lembur) %>/jam</dd></div>
+          <div class="detail-row"><dt>Faktor pengali</dt><dd><%= param.faktorLembur %>x</dd></div>
+          <div class="detail-row"><dt>Jam lembur Anda</dt><dd class="num"><%= h.duration(slip.menit_lembur) %></dd></div>
+          <div class="detail-row"><dt>Nilai lembur</dt><dd class="num fw-bold text-success-strong"><%= h.money(slip.nilai_lembur) %></dd></div>
+        </dl>
+        <div class="alert alert-light border small mt-3 mb-0">
+          <i class="bi bi-calculator me-1 text-navy"></i>
+          Nilai lembur = (gaji pokok + tunjangan tetap) &divide; (hari kerja x jam kerja) x <%= param.faktorLembur %> x jam lembur.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

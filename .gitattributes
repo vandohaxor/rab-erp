@@ -1,0 +1,16 @@
+# Database SQLite harus diperlakukan sebagai binary agar tidak pernah
+# diubah oleh konversi line-ending (isi file bisa rusak).
+data/*.sqlite binary
+data/*.sqlite-wal binary
+data/*.sqlite-shm binary
+public/uploads/** binary
+
+# Paksa LF di repository agar hasil checkout di Linux (Render) konsisten.
+* text=auto eol=lf
+
+*.js text eol=lf
+*.json text eol=lf
+*.ejs text eol=lf
+*.css text eol=lf
+*.svg text eol=lf
+*.md text eol=lf

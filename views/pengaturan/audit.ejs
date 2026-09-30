@@ -1,0 +1,88 @@
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `<a href="/pengaturan" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Pengaturan</a>`
+    }) %>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label" for="q">Cari</label>
+        <input type="search" class="form-control" id="q" name="q" value="<%= filter.q || '' %>" placeholder="Nama, entitas, atau detail">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="aksi">Jenis Aksi</label>
+        <select class="form-select" id="aksi" name="aksi">
+          <option value="">Semua aksi</option>
+          <% aksiList.forEach(function (a) { %>
+            <option value="<%= a.aksi %>" <%= filter.aksi === a.aksi ? 'selected' : '' %>><%= AUDIT_LABEL[a.aksi] || a.aksi %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="limit">Jumlah Baris</label>
+        <select class="form-select" id="limit" name="limit">
+          <% [50, 100, 200].forEach(function (n) { %>
+            <option value="<%= n %>" <%= pagination.limit === n ? 'selected' : '' %>><%= n %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-navy w-100"><i class="bi bi-funnel me-1"></i>Terapkan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-activity me-1"></i><%= pagination.total %> catatan aktivitas</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Entitas</th><th>Rincian</th><th>IP</th></tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="6"><div class="empty-state"><i class="bi bi-clock-history"></i><h6>Belum ada aktivitas tercatat</h6></div></td></tr>
+        <% } %>
+        <% rows.forEach(function (r) {
+             const m = AUDIT_META[r.aksi] || { badge: 'secondary', icon: 'bi-dot' }; %>
+          <tr>
+            <td class="small text-nowrap"><%= h.dateTime(r.created_at) %></td>
+            <td class="small">
+              <div class="fw-semibold"><%= r.nama || 'Sistem' %></div>
+              <div class="text-muted" style="font-size:.7rem"><%= ROLE_META[r.role] ? ROLE_META[r.role].label : (r.role || '-') %></div>
+            </td>
+            <td>
+              <span class="badge badge-status text-bg-<%= m.badge %>"><i class="bi <%= m.icon %> me-1"></i><%= AUDIT_LABEL[r.aksi] || r.aksi %></span>
+            </td>
+            <td class="small text-muted"><%= r.entitas || '-' %><%= r.entitas_id ? ' #' + r.entitas_id : '' %></td>
+            <td class="small"><%= r.detail || '-' %></td>
+            <td class="num small text-muted"><%= r.ip || '-' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% if (pagination.totalPages > 1) { %>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <span class="small text-muted">
+        Halaman <%= pagination.page %> dari <%= pagination.totalPages %>
+      </span>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <%= pagination.page <= 1 ? 'disabled' : '' %>">
+            <a class="page-link" href="?page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %>&q=<%= encodeURIComponent(filter.q || '') %>&aksi=<%= encodeURIComponent(filter.aksi || '') %>">Sebelumnya</a>
+          </li>
+          <li class="page-item <%= pagination.page >= pagination.totalPages ? 'disabled' : '' %>">
+            <a class="page-link" href="?page=<%= pagination.page + 1 %>&limit=<%= pagination.limit %>&q=<%= encodeURIComponent(filter.q || '') %>&aksi=<%= encodeURIComponent(filter.aksi || '') %>">Berikutnya</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  <% } %>
+</div>

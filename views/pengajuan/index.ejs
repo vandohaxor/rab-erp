@@ -1,0 +1,157 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<% if (bisaProses) { %>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-warning">
+        <span class="stat-icon"><i class="bi bi-hourglass"></i></span>
+        <div>
+          <div class="stat-label">Menunggu Persetujuan</div>
+          <div class="stat-value"><%= pending %></div>
+          <div class="stat-meta">perlu tindakan Anda</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-success">
+        <span class="stat-icon"><i class="bi bi-check2-circle"></i></span>
+        <div>
+          <div class="stat-label">Disetujui</div>
+          <div class="stat-value"><%= semua.filter(function (p) { return p.status === 'disetujui'; }).length %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-danger">
+        <span class="stat-icon"><i class="bi bi-x-circle"></i></span>
+        <div>
+          <div class="stat-label">Ditolak</div>
+          <div class="stat-value"><%= semua.filter(function (p) { return p.status === 'ditolak'; }).length %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-info">
+        <span class="stat-icon"><i class="bi bi-list-check"></i></span>
+        <div>
+          <div class="stat-label">Total Pengajuan</div>
+          <div class="stat-value"><%= semua.length %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<!-- FORM AJUAN (KARYAWAN) -->
+<% if (!bisaProses && user.karyawanId) { %>
+  <div class="card mb-4" id="form-izin">
+    <div class="card-header"><span><i class="bi bi-envelope-plus me-1"></i>Ajukan Izin, Sakit, atau Cuti</span></div>
+    <div class="card-body">
+      <form method="post" action="/pengajuan" class="row g-3" data-dirty-guard>
+        <div class="col-md-3">
+          <label class="form-label" for="jenis">Jenis</label>
+          <select class="form-select" id="jenis" name="jenis" required>
+            <% Object.keys(JENIS_IZIN).forEach(function (k) { %>
+              <option value="<%= k %>"><%= JENIS_IZIN[k] %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="tanggal_mulai">Tanggal Mulai</label>
+          <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai"
+                 value="<%= h.today() %>" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="tanggal_selesai">Tanggal Selesai</label>
+          <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai"
+                 value="<%= h.today() %>" required>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-navy w-100"><i class="bi bi-send me-1"></i>Kirim Pengajuan</button>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="alasan">Alasan</label>
+          <textarea class="form-control" id="alasan" name="alasan" rows="2" required
+                    placeholder="Jelaskan alasan pengajuan agar atasan dapat mempertimbangkan."></textarea>
+        </div>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<!-- TABEL -->
+<div class="card table-card mb-4">
+  <div class="card-header"><span><i class="bi bi-inbox me-1"></i>Pengajuan Tersimpan</span></div>
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr>
+          <% if (bisaProses) { %><th>NIP</th><th>Nama</th><% } %>
+          <th>Jenis</th><th>Periode</th><th>Alasan</th><th>Status</th>
+          <% if (bisaProses) { %><th class="text-end no-print">Aksi</th><% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% const sumber = bisaProses ? semua : milikSaya; %>
+        <% if (!sumber.length) { %>
+          <tr><td colspan="<%= bisaProses ? 8 : 6 %>">
+            <div class="empty-state"><i class="bi bi-envelope"></i><h6>Belum ada pengajuan</h6>
+              <p class="small mb-0">Pengajuan izin akan tampil di sini.</p>
+            </div>
+          </td></tr>
+        <% } %>
+
+        <% sumber.forEach(function (p) {
+             const meta = { pending: { label: 'Menunggu', badge: 'warning' },
+                            disetujui: { label: 'Disetujui', badge: 'success' },
+                            ditolak: { label: 'Ditolak', badge: 'danger' } }[p.status] || { label: p.status, badge: 'secondary' }; %>
+          <tr>
+            <% if (bisaProses) { %>
+              <td class="nip-cell small"><%= p.nip %></td>
+              <td class="small fw-semibold"><%= p.nama_lengkap %></td>
+            <% } %>
+            <td><span class="badge badge-status text-bg-light border"><%= JENIS_IZIN[p.jenis] || p.jenis %></span></td>
+            <td class="small">
+              <%= h.date(p.tanggal_mulai) %>
+              <% if (p.tanggal_selesai !== p.tanggal_mulai) { %> s.d. <%= h.date(p.tanggal_selesai) %><% } %>
+              <div class="text-muted" style="font-size:.72rem">
+                <%= h.dayjs().diff(h.dayjs(p.tanggal_mulai), 'day') + 1 %> hari
+              </div>
+            </td>
+            <td class="small text-muted"><%= p.alasan %></td>
+            <td>
+              <span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span>
+              <% if (p.catatan) { %>
+                <div class="text-muted" style="font-size:.72rem"><%= p.catatan %></div>
+              <% } %>
+            </td>
+            <% if (bisaProses) { %>
+              <td class="text-end no-print">
+                <% if (p.status === 'pending') { %>
+                  <div class="btn-group btn-group-sm">
+                    <form method="post" action="/pengajuan/<%= p.id %>/proses">
+                      <input type="hidden" name="status" value="disetujui">
+                      <button type="submit" class="btn btn-outline-success"><i class="bi bi-check-lg"></i> Setujui</button>
+                    </form>
+                    <form method="post" action="/pengajuan/<%= p.id %>/proses">
+                      <input type="hidden" name="status" value="ditolak">
+                      <button type="submit" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i> Tolak</button>
+                    </form>
+                  </div>
+                <% } else { %>
+                  <span class="text-muted small"><%= h.date(p.updated_at) %></span>
+                <% } %>
+              </td>
+            <% } %>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% if (bisaProses) { %>
+    <div class="card-footer small text-muted">
+      <i class="bi bi-info-circle me-1"></i>
+      Pengajuan yang disetujui otomatis tercatat pada tabel absensi dengan status sesuai jenis pengajuan.
+    </div>
+  <% } %>
+</div>

@@ -1,0 +1,19 @@
+node_modules/
+public/uploads/*
+!public/uploads/logo.png
+!public/uploads/logo.*
+!public/uploads/absensi/
+!public/uploads/absensi/**
+data/backup/
+data/*.sqlite
+# Database demo ikut ter-commit agar Render tidak start dengan DB kosong.
+!data/rab.sqlite
+data/*.sqlite-journal
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/sessions.db
+logs/
+.env
+npm-debug.log*
+.DS_Store
+Thumbs.db

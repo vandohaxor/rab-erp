@@ -1,0 +1,199 @@
+<%
+  const k = karyawan;
+  const st = STATUS_KARYAWAN[k.status_karyawan] || { label: k.status_karyawan, badge: 'secondary' };
+  const totalGaji = Number(k.gaji_pokok) + Number(k.tunjangan_transport) + Number(k.tunjangan_makan) + Number(k.tunjangan_lain);
+%>
+
+<%- include('../partials/print-head', { judul: 'DETAIL KARYAWAN - ' + k.nama_lengkap }) %>
+
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: actions + `<button class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Cetak</button>`
+    }) %>
+
+<div class="row g-4">
+  <!-- PROFIL -->
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-body text-center">
+        <span class="avatar avatar-lg mb-3"><%= h.initials(k.nama_lengkap) %></span>
+        <h5 class="mb-1 text-navy"><%= k.nama_lengkap %></h5>
+        <p class="text-muted small mb-2"><%= k.jabatan || '-' %></p>
+        <span class="badge badge-status text-bg-<%= st.badge %>"><%= st.label %></span>
+        <span class="badge badge-status text-bg-light border text-muted"><%= k.tipe_kontrak %></span>
+
+        <hr class="soft-divider">
+
+        <dl class="mb-0 text-start">
+          <div class="detail-row"><dt>NIP</dt><dd class="num"><%= k.nip %></dd></div>
+          <div class="detail-row"><dt>NIK</dt><dd class="num"><%= k.nik || '-' %></dd></div>
+          <div class="detail-row"><dt>Departemen</dt><dd><%= k.departemen || '-' %></dd></div>
+          <div class="detail-row"><dt>Jenis Kelamin</dt><dd><%= k.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki' %></dd></div>
+          <div class="detail-row"><dt>Tempat, Tgl Lahir</dt><dd><%= k.tempat_lahir || '-' %>, <%= h.date(k.tanggal_lahir) %></dd></div>
+          <div class="detail-row"><dt>Tanggal Masuk</dt><dd><%= h.date(k.tanggal_masuk) %></dd></div>
+          <% if (k.tanggal_keluar) { %>
+            <div class="detail-row"><dt>Tanggal Keluar</dt><dd><%= h.date(k.tanggal_keluar) %></dd></div>
+          <% } %>
+          <div class="detail-row"><dt>No. HP</dt><dd class="num"><%= k.no_hp || '-' %></dd></div>
+          <div class="detail-row"><dt>Email</dt><dd class="text-break"><%= k.email || '-' %></dd></div>
+          <div class="detail-row"><dt>Rekening</dt><dd><%= k.nama_bank || '-' %> <%= k.no_rekening || '' %></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-person-gear me-1"></i>Akun Sistem</span></div>
+      <div class="card-body">
+        <% if (pengguna) { %>
+          <dl class="mb-0">
+            <div class="detail-row"><dt>Email login</dt><dd class="text-break"><%= pengguna.email %></dd></div>
+            <div class="detail-row"><dt>Role</dt><dd><%= ROLE_META[pengguna.role]?.label || pengguna.role %></dd></div>
+            <div class="detail-row"><dt>Status</dt><dd><%= pengguna.status === 'aktif' ? 'Aktif' : 'Nonaktif' %></dd></div>
+          </dl>
+          <a href="/users/<%= pengguna.id %>/edit" class="btn btn-outline-primary btn-sm w-100 mt-3">
+            <i class="bi bi-pencil-square me-1"></i>Kelola Akun
+          </a>
+        <% } else { %>
+          <p class="small text-muted mb-3">Karyawan ini belum memiliki akun login.</p>
+          <a href="/users/tambah?karyawan_id=<%= k.id %>" class="btn btn-gold btn-sm w-100">
+            <i class="bi bi-person-plus me-1"></i>Buat Akun Login
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- KANAN -->
+  <div class="col-xl-8">
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <span class="stat-icon"><i class="bi bi-wallet2"></i></span>
+          <div>
+            <div class="stat-label">Gaji Pokok</div>
+            <div class="stat-value num" style="font-size:1rem"><%= h.money(k.gaji_pokok) %></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card is-info">
+          <span class="stat-icon"><i class="bi bi-cash-stack"></i></span>
+          <div>
+            <div class="stat-label">Total Tunjangan</div>
+            <div class="stat-value num" style="font-size:1rem"><%= h.money(totalGaji - Number(k.gaji_pokok)) %></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card is-gold">
+          <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+          <div>
+            <div class="stat-label">Lembur Bulan Ini</div>
+            <div class="stat-value"><%= h.duration(rekap.menit_lembur || 0) %></div>
+            <div class="stat-meta"><%= rekap.hadir || 0 %> hari hadir</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card is-success">
+          <span class="stat-icon"><i class="bi bi-calendar-check"></i></span>
+          <div>
+            <div class="stat-label">Masa Kerja</div>
+            <div class="stat-value" style="font-size:1.05rem">
+              <%= Math.floor(h.dayjs().diff(h.dayjs(k.tanggal_masuk), 'month') / 12) %> th
+              <%= h.dayjs().diff(h.dayjs(k.tanggal_masuk), 'month') % 12 %> bln
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-clipboard-data me-1"></i>Rekap Absensi <%= h.monthName(periode.bulan) %> <%= periode.tahun %></span></div>
+      <div class="card-body">
+        <div class="row g-3 text-center">
+          <div class="col-6 col-md-3">
+            <div class="stat-value text-success-strong"><%= rekap.hadir || 0 %></div>
+            <div class="stat-label">Hadir</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-value text-info-strong"><%= rekap.izin || 0 %></div>
+            <div class="stat-label">Izin</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-value text-warning-strong"><%= rekap.sakit || 0 %></div>
+            <div class="stat-label">Sakit</div>
+          </div>
+          <div class="col-6 col-md-3">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">
+        <span><i class="bi bi-clock-history me-1"></i>Riwayat Absensi 30 Hari Terakhir</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover table-compact mb-0">
+          <thead>
+            <tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th class="text-end">Durasi</th><th class="text-end">Lembur</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <% if (!absensi.length) { %>
+              <tr><td colspan="6">
+                <div class="empty-state py-4"><i class="bi bi-inbox"></i><h6>Belum ada riwayat absensi</h6></div>
+              </td></tr>
+            <% } %>
+            <% absensi.forEach(function (a) {
+                 const meta = STATUS_ABSENSI[a.status] || { label: a.status, badge: 'secondary' }; %>
+              <tr>
+                <td class="small"><%= h.dayName(a.tanggal).slice(0, 3) %>, <%= h.date(a.tanggal) %></td>
+                <td class="num small"><%= h.dotTime(a.jam_masuk) %></td>
+                <td class="num small"><%= h.dotTime(a.jam_pulang) %></td>
+                <td class="text-end num small"><%= a.durasi_menit ? h.duration(a.durasi_menit) : '-' %></td>
+                <td class="text-end num small <%= a.menit_lembur ? 'text-success-strong fw-semibold' : 'text-muted' %>">
+                  <%= a.menit_lembur ? h.duration(a.menit_lembur) : '-' %>
+                </td>
+                <td><span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-receipt me-1"></i>Riwayat Penggajian</span></div>
+      <div class="table-responsive">
+        <table class="table table-hover table-compact mb-0">
+          <thead>
+            <tr><th>Periode</th><th class="text-end">Pendapatan</th><th class="text-end">Potongan</th><th class="text-end">Gaji Bersih</th><th>Status</th><th class="text-end no-print">Aksi</th></tr>
+          </thead>
+          <tbody>
+            <% if (!payroll.length) { %>
+              <tr><td colspan="6">
+                <div class="empty-state py-4"><i class="bi bi-inbox"></i><h6>Belum ada riwayat gaji</h6></div>
+              </td></tr>
+            <% } %>
+            <% payroll.forEach(function (p) {
+                 const meta = STATUS_PAYROLL[p.status] || { label: p.status, badge: 'secondary' }; %>
+              <tr>
+                <td class="small fw-semibold"><%= h.monthName(p.bulan) %> <%= p.tahun %></td>
+                <td class="text-end num small"><%= h.money(p.total_pendapatan) %></td>
+                <td class="text-end num small text-danger-strong"><%= h.money(p.total_potongan) %></td>
+                <td class="text-end num small fw-semibold"><%= h.money(p.gaji_bersih) %></td>
+                <td><span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span></td>
+                <td class="text-end no-print">
+                  <a href="/payroll/<%= p.id %>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

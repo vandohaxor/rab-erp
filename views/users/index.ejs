@@ -1,0 +1,141 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="row g-3 mb-4">
+  <% ROLE_LIST.forEach(function (role) { const m = roleMeta[role]; %>
+    <div class="col-md-4">
+      <div class="stat-card <%= role === 'superadmin' ? 'is-danger' : role === 'keuangan' ? 'is-success' : 'is-info' %>">
+        <span class="stat-icon"><i class="bi bi-person-badge"></i></span>
+        <div>
+          <div class="stat-label"><%= m.label %></div>
+          <div class="stat-value"><%= statistik[role] %></div>
+          <div class="stat-meta"><%= m.deskripsi.split('-')[0].trim() %></div>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<div class="card table-card">
+  <div class="card-header">
+    <form method="get" class="row g-2 align-items-center w-100">
+      <div class="col-md-5">
+        <input type="text" class="form-control form-control-sm" name="q" value="<%= filter.q || '' %>"
+               placeholder="Cari nama, email, NIP...">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" name="role" data-auto-submit>
+          <option value="">Semua Peran</option>
+          <% ROLE_LIST.forEach(function (role) { %>
+            <option value="<%= role %>" <%= filter.role === role ? 'selected' : '' %>><%= roleMeta[role].label %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select form-select-sm" name="status" data-auto-submit>
+          <option value="">Semua Status</option>
+          <option value="aktif" <%= filter.status === 'aktif' ? 'selected' : '' %>>Aktif</option>
+          <option value="nonaktif" <%= filter.status === 'nonaktif' ? 'selected' : '' %>>Nonaktif</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-navy btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
+        <a href="/users" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Nama Pengguna</th><th>Email</th><th>Peran</th><th>Password</th>
+          <th>Data Karyawan</th><th>Terakhir Masuk</th><th>Status</th><th class="text-end">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="8">
+            <div class="empty-state"><i class="bi bi-person-x"></i><h6>Pengguna tidak ditemukan</h6></div>
+          </td></tr>
+        <% } %>
+
+        <% rows.forEach(function (u) { const meta = roleMeta[u.role] || {}; %>
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge-dot"><%= h.initials(u.nama) %></span>
+                <div class="lh-sm">
+                  <a href="/users/<%= u.id %>" class="fw-semibold text-navy text-decoration-none"><%= u.nama %></a>
+                </div>
+              </div>
+            </td>
+            <td class="small text-break"><%= u.email %></td>
+            <td><span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span></td>
+            <td class="small">
+              <% if (u.password_teks) { %>
+                <div class="d-flex align-items-center gap-1">
+                  <code class="text-body" data-password-plain="<%= u.password_teks %>">&bull;&bull;&bull;&bull;&bull;&bull;</code>
+                  <button type="button" class="btn btn-sm btn-link p-0 text-secondary" data-toggle-password
+                          title="Tampilkan password"><i class="bi bi-eye"></i></button>
+                </div>
+              <% } else { %>
+                <span class="text-muted" title="Password lama belum pernah tersimpan terbaca">Tidak tersimpan</span>
+                <div class="text-muted" style="font-size:.72rem">Reset untuk melihat</div>
+              <% } %>
+            </td>
+            <td class="small">
+              <% if (u.karyawan_id) { %>
+                <a href="/karyawan/<%= u.karyawan_id %>" class="text-decoration-none"><%= u.nama_lengkap %></a>
+                <div class="text-muted" style="font-size:.72rem"><%= u.nip %> · <%= u.departemen || '-' %></div>
+              <% } else { %>
+                <span class="text-muted">Tidak terhubung</span>
+              <% } %>
+            </td>
+            <td class="small text-muted"><%= u.terakhir_masuk ? h.dateTime(u.terakhir_masuk) : 'Belum pernah' %></td>
+            <td><span class="badge badge-status text-bg-<%= u.status === 'aktif' ? 'success' : 'secondary' %>"><%= h.capitalize(u.status) %></span></td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <a href="/users/<%= u.id %>" class="btn btn-outline-primary" title="Detail"><i class="bi bi-eye"></i></a>
+                <a href="/users/<%= u.id %>/edit" class="btn btn-outline-primary" title="Ubah"><i class="bi bi-pencil-square"></i></a>
+                <form method="post" action="/users/<%= u.id %>/reset-password" class="d-inline"
+                      data-confirm="Reset password pengguna ini? Password lama tidak akan berlaku lagi.">
+                  <button type="submit" class="btn btn-outline-warning" title="Reset password"><i class="bi bi-key"></i></button>
+                </form>
+                <% if (u.id !== user.id) { %>
+                  <form method="post" action="/users/<%= u.id %>/toggle-status" class="d-inline">
+                    <button type="submit" class="btn btn-outline-secondary" title="<%= u.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' %>">
+                      <i class="bi bi-<%= u.status === 'aktif' ? 'toggle-on' : 'toggle-off' %>"></i>
+                    </button>
+                  </form>
+                  <form method="post" action="/users/<%= u.id %>?_method=DELETE" class="d-inline"
+                        data-confirm="<%= ringkasanHapus(u) %>">
+                    <button type="submit" class="btn btn-outline-danger" title="Hapus pengguna"><i class="bi bi-trash"></i></button>
+                  </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header"><span><i class="bi bi-info-circle me-1"></i>Penjelasan Peran (Role)</span></div>
+  <div class="card-body">
+    <div class="row g-3">
+      <% ROLE_LIST.forEach(function (role) { const m = roleMeta[role]; %>
+        <div class="col-md-4">
+          <div class="border rounded p-3 h-100">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="badge text-bg-<%= m.badge %>"><%= m.label %></span>
+            </div>
+            <p class="small text-muted mb-2"><%= m.deskripsi %></p>
+            <p class="small mb-0"><strong>Jumlah akun aktif:</strong> <%= statistik[role] %></p>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>

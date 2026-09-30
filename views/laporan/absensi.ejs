@@ -1,0 +1,86 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+  <%- include('../partials/filter-periode', { periode: periode }) %>
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Cetak
+  </button>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Total Kehadiran</div>
+      <div class="stat-value text-success-strong"><%= total.hadir %></div>
+      <div class="small text-muted">hari kerja seluruh karyawan</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Izin &amp; Cuti</div>
+      <div class="stat-value text-warning-strong"><%= total.izin %></div>
+      <div class="small text-muted">izin disetujui</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Sakit</div>
+      <div class="stat-value text-info-strong"><%= total.sakit %></div>
+      <div class="small text-muted">hari sakit tercatat</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="small text-muted">tanpa keterangan</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-table me-1"></i>Rekap per Karyawan</span>
+    <span class="badge text-bg-light border text-muted">Jadwal: <%= h.dotTime(jadwal.jamMasuk) %> - <%= h.dotTime(jadwal.jamPulang) %></span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr>
+          <th>#</th><th>Karyawan</th><th>Departemen</th>
+          <th class="text-center">Hadir</th><th class="text-center">Izin</th><th class="text-center">Sakit</th><th class="text-center">Cuti</th>
+          <th class="text-end">Lembur</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rekap.length) { %>
+          <tr><td colspan="8"><div class="empty-state"><i class="bi bi-inbox"></i><h6>Belum ada data absensi pada periode ini</h6></div></td></tr>
+        <% } %>
+        <% rekap.forEach(function (r, i) { %>
+          <tr>
+            <td class="num small text-muted"><%= i + 1 %></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar avatar-sm"><%= h.initials(r.nama_lengkap) %></span>
+                <div>
+                  <div class="small fw-semibold"><%= r.nama_lengkap %></div>
+                  <div class="text-muted" style="font-size:.7rem"><%= r.nip %></div>
+                </div>
+              </div>
+            </td>
+            <td class="small text-muted"><%= r.departemen || '-' %></td>
+            <td class="text-center"><span class="badge text-bg-success bg-opacity-75"><%= r.hari_hadir %></span></td>
+            <td class="text-center"><span class="badge text-bg-warning bg-opacity-75"><%= r.hari_izin %></span></td>
+            <td class="text-center"><span class="badge text-bg-info bg-opacity-75"><%= r.hari_sakit %></span></td>
+            <td class="text-center"><span class="badge text-bg-secondary bg-opacity-75"><%= r.hari_cuti %></span></td>
+            <td class="text-end num small"><%= r.menit_lembur ? h.duration(r.menit_lembur) : '-' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer">
+    <div class="small text-muted">
+      Total lembur periode ini: <strong class="num"><%= h.duration(total.menitLembur) %></strong>
+      dihitung dari waktu kerja yang melebihi <%= h.dotTime(jadwal.jamPulang) %>.
+    </div>
+  </div>
+</div>

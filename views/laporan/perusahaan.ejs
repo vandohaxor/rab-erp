@@ -1,0 +1,128 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+  <%- include('../partials/filter-periode', { periode: periode }) %>
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Cetak
+  </button>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Karyawan Aktif</div>
+      <div class="stat-value text-navy"><%= employees.length %></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Komposisi JK</div>
+      <div class="stat-value text-navy" style="font-size:1.1rem">
+        <span class="text-navy"><%= genders.pria %></span> <span class="text-muted">/</span> <span class="text-warning-strong"><%= genders.wanita %></span>
+      </div>
+      <div class="small text-muted">pria / wanita</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Pemasukan <%= periode.tahun %></div>
+      <div class="stat-value num text-success-strong" style="font-size:1.05rem"><%= h.money(keuangan.totalPemasukan) %></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Laba / Rugi <%= periode.tahun %></div>
+      <div class="stat-value num <%= keuangan.labaBersih >= 0 ? 'text-navy' : 'text-danger-strong' %>" style="font-size:1.05rem"><%= h.money(keuangan.labaBersih) %></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-diagram-3 me-1"></i>Sebaran Karyawan per Departemen</span></div>
+      <div class="table-responsive">
+        <table class="table table-sm table-compact mb-0">
+          <thead><tr><th>Departemen</th><th class="text-center">Karyawan</th><th class="text-end">Payroll Bulanan</th></tr></thead>
+          <tbody>
+            <% if (!perDepartemen.length) { %>
+              <tr><td colspan="3" class="text-center text-muted small py-3">Belum ada data departemen</td></tr>
+            <% } %>
+            <% perDepartemen.forEach(function (d) { %>
+              <tr>
+                <td class="small"><%= d.departemen %></td>
+                <td class="text-center"><span class="badge text-bg-light border text-muted"><%= d.jumlah %></span></td>
+                <td class="text-end num small"><%= h.money(d.payroll) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-cash-stack me-1"></i>Ringkasan Payroll <%= h.monthName(periode.bulan) %></span></div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="stat-label">Total Gaji Pokok</div>
+            <div class="num fw-semibold"><%= h.money(rekapPayroll.gajiPokok) %></div>
+          </div>
+          <div class="col-6">
+            <div class="stat-label">Total Potongan</div>
+            <div class="num fw-semibold text-danger-strong"><%= h.money(rekapPayroll.totalPotongan) %></div>
+          </div>
+          <div class="col-6">
+            <div class="stat-label">Total Tunjangan</div>
+            <div class="num fw-semibold text-success-strong"><%= h.money(rekapPayroll.totalTunjangan) %></div>
+          </div>
+          <div class="col-6">
+            <div class="stat-label">Total Gaji Bersih</div>
+            <div class="num fw-bold text-navy"><%= h.money(rekapPayroll.gajiBersih) %></div>
+          </div>
+          <div class="col-6">
+            <div class="stat-label">Nilai Lembur</div>
+            <div class="num fw-semibold text-warning-strong"><%= h.money(rekapPayroll.nilaiLembur) %></div>
+          </div>
+          <div class="col-6">
+            <div class="stat-label">Total Durasi Lembur</div>
+            <div class="fw-semibold"><%= h.duration(rekapPayroll.menitLembur || totalLembur) %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-building me-1"></i>Identitas Perusahaan</span></div>
+      <div class="card-body">
+        <h6 class="text-navy mb-1"><%= company.badan %></h6>
+        <% if (company.tagline) { %><p class="text-muted small mb-2"><%= company.tagline %></p><% } %>
+        <dl class="mb-0">
+          <div class="detail-row"><dt>NPWP</dt><dd class="num"><%= company.npwp || '-' %></dd></div>
+          <div class="detail-row"><dt>Alamat</dt><dd class="small text-end"><%= company.alamat || '-' %></dd></div>
+          <div class="detail-row"><dt>Kota</dt><dd><%= [company.kota, company.provinsi, company.kode_pos].filter(Boolean).join(', ') || '-' %></dd></div>
+          <div class="detail-row"><dt>Telepon</dt><dd><%= company.telepon || '-' %></dd></div>
+          <div class="detail-row"><dt>Email</dt><dd class="small"><%= company.email || '-' %></dd></div>
+          <div class="detail-row"><dt>Direktur</dt><dd><%= company.direktur || '-' %></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-clock me-1"></i>Ketentuan Kerja</span></div>
+      <div class="card-body">
+        <dl class="mb-0">
+          <div class="detail-row"><dt>Jadwal kerja</dt><dd class="num"><%= h.dotTime(jadwal.jamMasuk) %> - <%= h.dotTime(jadwal.jamPulang) %></dd></div>
+          <div class="detail-row"><dt>Hari kerja</dt><dd><%= jadwal.hariKerja.length %> hari / minggu</dd></div>
+          <div class="detail-row"><dt>Lembur dihitung</dt><dd>setiap menit setelah <%= h.dotTime(jadwal.jamPulang) %></dd></div>
+          <div class="detail-row"><dt>Laporan ini</dt><dd><%= new Date().toLocaleDateString('id-ID', { dateStyle: 'long' }) %></dd></div>
+        </dl>
+        <p class="form-text mt-3 mb-0">
+          Dokumen ini dihasilkan otomatis oleh sistem dan sah untuk periode <%= periode.tahun %>.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

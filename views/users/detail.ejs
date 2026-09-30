@@ -1,0 +1,129 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-body text-center">
+        <span class="avatar avatar-lg mb-3"><%= h.initials(pengguna.nama) %></span>
+        <h5 class="mb-1 text-navy"><%= pengguna.nama %></h5>
+        <p class="text-muted small mb-2 text-break"><%= pengguna.email %></p>
+        <div class="d-flex flex-wrap justify-content-center gap-1 mb-2">
+          <span class="badge text-bg-<%= ROLE_META[pengguna.role]?.badge || 'secondary' %>">
+            <%= ROLE_META[pengguna.role]?.label || pengguna.role %>
+          </span>
+          <span class="badge text-bg-<%= pengguna.status === 'aktif' ? 'success' : 'secondary' %>">
+            <%= h.capitalize(pengguna.status) %>
+          </span>
+        </div>
+
+        <hr class="soft-divider">
+
+        <dl class="mb-0 text-start">
+          <div class="detail-row"><dt>Dibuat</dt><dd><%= h.date(pengguna.created_at) %></dd></div>
+          <div class="detail-row"><dt>Terakhir diubah</dt><dd><%= h.date(pengguna.updated_at) %></dd></div>
+          <div class="detail-row"><dt>Terakhir masuk</dt><dd><%= pengguna.terakhir_masuk ? h.dateTime(pengguna.terakhir_masuk) : 'Belum pernah' %></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <% if (pengguna.karyawan_id) { %>
+      <div class="card">
+        <div class="card-header"><span><i class="bi bi-person-vcard me-1"></i>Data Karyawan</span></div>
+        <div class="card-body">
+          <dl class="mb-0 text-start">
+            <div class="detail-row"><dt>Nama</dt><dd><%= pengguna.nama_lengkap %></dd></div>
+            <div class="detail-row"><dt>NIP</dt><dd class="num"><%= pengguna.nip || '-' %></dd></div>
+            <div class="detail-row"><dt>Jabatan</dt><dd><%= pengguna.jabatan || '-' %></dd></div>
+            <div class="detail-row"><dt>Departemen</dt><dd><%= pengguna.departemen || '-' %></dd></div>
+          </dl>
+          <a href="/karyawan/<%= pengguna.karyawan_id %>" class="btn btn-outline-primary btn-sm w-100 mt-3">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Lihat Data Karyawan
+          </a>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-key me-1"></i>Manajemen Password</span></div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="form-label mb-1">Password</div>
+          <% if (pengguna.password_teks) { %>
+            <div class="d-flex align-items-center gap-2">
+              <code class="fs-6 text-body" data-password-plain="<%= pengguna.password_teks %>">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</code>
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle-password>
+                <i class="bi bi-eye me-1"></i>Tampilkan
+              </button>
+            </div>
+            <div class="form-text">Password ini tersimpan apa adanya sehingga dapat dibagikan kembali ke pengguna.</div>
+          <% } else { %>
+            <div class="form-text mb-0">
+              Password lama belum pernah tersimpan dalam bentuk terbaca. Gunakan tombol Reset Password
+              di bawah untuk membuat password baru yang bisa dilihat.
+            </div>
+          <% } %>
+        </div>
+        <hr class="soft-divider">
+        <p class="small text-muted">
+          Reset password akan membuat password lama tidak berlaku. Pengguna tidak perlu mengganti
+          password lagi setelah masuk.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <form method="post" action="/users/<%= pengguna.id %>/reset-password"
+                data-confirm="Reset password pengguna ini? Password lama tidak akan berlaku lagi.">
+            <button type="submit" class="btn btn-outline-warning"><i class="bi bi-arrow-repeat me-1"></i>Reset Password</button>
+          </form>
+          <% if (bisaHapus) { %>
+            <form method="post" action="/users/<%= pengguna.id %>?_method=DELETE" data-confirm="<%= ringkasanHapus(pengguna) %>">
+              <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i>Hapus Pengguna</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-shield-check me-1"></i>Hak Akses per Modul</span></div>
+      <div class="card-body">
+        <% hak.forEach(function (row) { %>
+          <div class="mb-3">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="badge text-bg-<%= row.meta.badge %>"><%= row.meta.label %></span>
+              <span class="small text-muted"><%= row.modules.length %> modul tersedia</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1">
+              <% if (!row.modules.length) { %>
+                <span class="badge badge-status text-bg-light border text-muted">Tidak ada akses</span>
+              <% } %>
+              <% row.modules.forEach(function (m) { %>
+                <span class="badge badge-status text-bg-light border text-muted"><%= h.titleCase(m) %></span>
+              <% }); %>
+            </div>
+          </div>
+          <% if (row !== hak[hak.length - 1]) { %><hr class="soft-divider my-2"><% } %>
+        <% }); %>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-activity me-1"></i>Aktivitas Pengguna Ini</span></div>
+      <div class="card-body">
+        <% if (!aktivitas.length) { %>
+          <div class="empty-state py-3"><i class="bi bi-inbox"></i><h6>Belum ada aktivitas tercatat</h6></div>
+        <% } else { %>
+          <div class="timeline">
+            <% aktivitas.forEach(function (a) { %>
+              <div class="timeline-item">
+                <div class="small fw-semibold text-navy"><%= a.aksi %></div>
+                <div class="small text-muted"><%= a.detail || '-' %></div>
+                <div class="text-muted" style="font-size:.72rem"><%= h.dateTime(a.created_at) %> &middot; <%= a.ip || '-' %></div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

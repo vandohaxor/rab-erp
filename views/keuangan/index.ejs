@@ -1,0 +1,206 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-success">
+      <span class="stat-icon"><i class="bi bi-arrow-down-circle"></i></span>
+      <div>
+        <div class="stat-label">Total Pemasukan</div>
+        <div class="stat-value num" style="font-size:1.05rem"><%= h.money(rekap.pemasukan) %></div>
+        <div class="stat-meta"><%= rekap.jumlahTransaksi %> transaksi</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-danger">
+      <span class="stat-icon"><i class="bi bi-arrow-up-circle"></i></span>
+      <div>
+        <div class="stat-label">Total Pengeluaran</div>
+        <div class="stat-value num" style="font-size:1.05rem"><%= h.money(rekap.pengeluaran) %></div>
+        <div class="stat-meta"><%= perKategoriKeluar.length %> kategori</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card <%= rekap.labaBersih >= 0 ? 'is-gold' : 'is-danger' %>">
+      <span class="stat-icon"><i class="bi bi-graph-up-arrow"></i></span>
+      <div>
+        <div class="stat-label">Laba Bersih</div>
+        <div class="stat-value num" style="font-size:1.05rem"><%= h.money(rekap.labaBersih) %></div>
+        <div class="stat-meta">margin <%= h.percent(rekap.labaBersih, rekap.pemasukan) %>%</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-info">
+      <span class="stat-icon"><i class="bi bi-wallet2"></i></span>
+      <div>
+        <div class="stat-label">Saldo Tahun Ini</div>
+        <div class="stat-value num" style="font-size:1.05rem"><%= h.money(saldoTahun.pemasukan - saldoTahun.pengeluaran) %></div>
+        <div class="stat-meta">sejak 1 Januari <%= h.dayjs().year() %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="card mb-4">
+      <div class="card-header">
+        <form method="get" class="row g-2 align-items-center w-100">
+          <div class="col-md-4">
+            <label class="form-label small mb-0">Dari Tanggal</label>
+            <input type="date" class="form-control form-control-sm" name="tanggal_mulai" value="<%= tanggalMulai %>" data-auto-submit>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-0">Sampai Tanggal</label>
+            <input type="date" class="form-control form-control-sm" name="tanggal_selesai" value="<%= tanggalSelesai %>" data-auto-submit>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <a href="/keuangan/laporan?tanggal_mulai=<%= tanggalMulai %>&tanggal_selesai=<%= tanggalSelesai %>" class="btn btn-outline-primary btn-sm w-100">
+              <i class="bi bi-file-earmark-text me-1"></i>Buka Laporan Lengkap
+            </a>
+          </div>
+        </form>
+      </div>
+      <div class="card-body">
+        <div style="height:300px"><canvas id="chartArusKas"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span><i class="bi bi-receipt me-1"></i>Transaksi Terbaru</span>
+        <a href="/keuangan/transaksi" class="btn btn-sm btn-outline-primary">Semua Transaksi</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover table-compact mb-0">
+          <thead>
+            <tr><th>Kode</th><th>Tanggal</th><th>Kategori</th><th>PIC</th><th class="text-end">Jumlah</th></tr>
+          </thead>
+          <tbody>
+            <% if (!transaksiTerbaru.length) { %>
+              <tr><td colspan="5"><div class="empty-state py-4"><i class="bi bi-inbox"></i><h6>Belum ada transaksi</h6></div></td></tr>
+            <% } %>
+            <% transaksiTerbaru.forEach(function (t) { %>
+              <tr>
+                <td><code class="small"><%= t.kode %></code></td>
+                <td class="small"><%= h.date(t.tanggal) %></td>
+                <td class="small"><%= t.kategori || '-' %></td>
+                <td class="small text-muted"><%= t.pic || '-' %></td>
+                <td class="text-end num small fw-semibold <%= t.jenis === 'pemasukan' ? 'text-success-strong' : 'text-danger-strong' %>">
+                  <%= t.jenis === 'pemasukan' ? '+' : '-' %> <%= h.money(t.jumlah) %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-pie-chart me-1"></i>Komposisi Pemasukan</span></div>
+      <div class="card-body">
+        <% if (!perKategoriMasuk.length) { %>
+          <div class="empty-state py-3"><i class="bi bi-inbox"></i><p class="small mb-0">Belum ada pemasukan pada periode ini.</p></div>
+        <% } else { %>
+          <div style="height:220px"><canvas id="chartPemasukan"></canvas></div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-pie-chart-fill me-1"></i>Komposisi Pengeluaran</span></div>
+      <div class="card-body">
+        <% if (!perKategoriKeluar.length) { %>
+          <div class="empty-state py-3"><i class="bi bi-inbox"></i><p class="small mb-0">Belum ada pengeluaran pada periode ini.</p></div>
+        <% } else { %>
+          <div style="height:220px"><canvas id="chartPengeluaran"></canvas></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const arus = <%- JSON.stringify(arusKas) %>;
+    const el = document.getElementById('chartArusKas');
+    if (el && window.Chart) {
+      new Chart(el, {
+        type: 'bar',
+        data: {
+          labels: arus.map(function (r) { return hLabel(r.tanggal); }),
+          datasets: [
+            { label: 'Pemasukan', data: arus.map(function (r) { return r.pemasukan; }), backgroundColor: '#157347', borderRadius: 3 },
+            { label: 'Pengeluaran', data: arus.map(function (r) { return r.pengeluaran; }), backgroundColor: '#b42318', borderRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  return ctx.dataset.label + ': Rp ' + new Intl.NumberFormat('id-ID').format(ctx.parsed.y);
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 60 } },
+            y: {
+              grid: { color: 'rgba(15,41,66,.08)' },
+              ticks: {
+                font: { size: 10 },
+                callback: function (v) { return v >= 1e6 ? (v / 1e6).toFixed(0) + 'jt' : v; }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function hLabel(t) {
+      const d = new Date(t);
+      return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    }
+
+    function pie(id, rows, warna) {
+      const canvas = document.getElementById(id);
+      if (!canvas || !rows.length) return;
+      new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: rows.map(function (r) { return r.kategori; }),
+          datasets: [{
+            data: rows.map(function (r) { return r.total; }),
+            backgroundColor: warna,
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '58%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 11, font: { size: 10 }, padding: 8 } },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  return ctx.label + ': Rp ' + new Intl.NumberFormat('id-ID').format(ctx.parsed);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    const pal = ['#16395c', '#c9a227', '#157347', '#b54708', '#026aa2', '#7c3aed', '#b42318', '#0f766e', '#be185d', '#65a30d'];
+    pie('chartPemasukan', <%- JSON.stringify(perKategoriMasuk) %>, pal);
+    pie('chartPengeluaran', <%- JSON.stringify(perKategoriKeluar) %>, pal);
+  })();
+</script>

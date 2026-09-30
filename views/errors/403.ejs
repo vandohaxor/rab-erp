@@ -1,0 +1,17 @@
+<%- include('../partials/page-head', { title: title }) %>
+
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-shield-exclamation display-1 text-danger" style="opacity:.35"></i>
+    <h4 class="text-navy mt-3 mb-2"><%= title %></h4>
+    <p class="text-muted mb-1">Anda tidak memiliki izin untuk membuka halaman ini.</p>
+    <% if (typeof requiredRoles !== 'undefined' && requiredRoles && requiredRoles.length) { %>
+      <p class="text-muted small mb-3">
+        Akses ini hanya diberikan kepada: <strong><%= requiredRoles.join(', ') %></strong>
+      </p>
+    <% } %>
+    <div class="d-flex justify-content-center gap-2">
+      <a href="/" class="btn btn-navy"><i class="bi bi-house-door me-1"></i>Kembali ke Dashboard</a>
+    </div>
+  </div>
+</div>

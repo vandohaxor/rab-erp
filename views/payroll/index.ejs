@@ -1,0 +1,266 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+  <%- include('../partials/filter-periode', { periode: periode }) %>
+</div>
+
+<% if (!rows.length) { %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="empty-state py-4">
+        <i class="bi bi-calculator"></i>
+        <h6>Payroll <%= h.monthName(periode.bulan) %> <%= periode.tahun %> belum dihitung</h6>
+        <p class="small mb-3">
+          Sistem akan menghitung gaji seluruh karyawan berdasarkan data absensi:
+          kehadiran, lembur, dan potongan otomatis.
+        </p>
+        <button class="btn btn-navy" data-bs-toggle="modal" data-bs-target="#modalGenerate">
+          <i class="bi bi-calculator me-1"></i>Hitung Payroll Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
+<% } else { %>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-info">
+        <span class="stat-icon"><i class="bi bi-people"></i></span>
+        <div>
+          <div class="stat-label">Jumlah Slip</div>
+          <div class="stat-value"><%= total.karyawan %></div>
+          <div class="stat-meta"><%= semuaSlip.filter(function (s) { return s.status === 'dibayar'; }).length %> sudah dibayar</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-success">
+        <span class="stat-icon"><i class="bi bi-wallet2"></i></span>
+        <div>
+          <div class="stat-label">Total Pendapatan</div>
+          <div class="stat-value num" style="font-size:1.02rem"><%= h.money(total.totalPendapatan) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-danger">
+        <span class="stat-icon"><i class="bi bi-dash-circle"></i></span>
+        <div>
+          <div class="stat-label">Total Potongan</div>
+          <div class="stat-value num" style="font-size:1.02rem"><%= h.money(total.totalPotongan) %></div>
+          <div class="stat-meta">termasuk kasbon <%= h.money(total.kasbon) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-gold">
+        <span class="stat-icon"><i class="bi bi-cash-stack"></i></span>
+        <div>
+          <div class="stat-label">Total Gaji Bersih</div>
+          <div class="stat-value num" style="font-size:1.02rem"><%= h.money(total.gajiBersih) %></div>
+          <div class="stat-meta">yang harus dibayarkan</div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<div class="card table-card">
+  <div class="card-header">
+    <form method="get" class="row g-2 align-items-center w-100">
+      <div class="col-md-4">
+        <input type="text" class="form-control form-control-sm" name="q" value="<%= filter.q || '' %>"
+               placeholder="Cari nama atau NIP...">
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" name="status" data-auto-submit>
+          <option value="">Semua Status</option>
+          <% Object.keys(STATUS_PAYROLL).forEach(function (k) { %>
+            <option value="<%= k %>" <%= filter.status === k ? 'selected' : '' %>><%= STATUS_PAYROLL[k].label %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-navy btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <a href="/payroll?bulan=<%= periode.bulan %>&tahun=<%= periode.tahun %>" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr>
+          <th>NIP</th><th>Nama</th><th>Departemen</th>
+          <th class="text-center">Hadir</th><th class="text-end">Lembur</th><th class="text-end">Nilai Lembur</th>
+          <th class="text-end">Pendapatan</th><th class="text-end">Potongan</th><th class="text-end">Gaji Bersih</th>
+          <th>Status</th><th class="text-end no-print">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="11"><div class="empty-state"><i class="bi bi-inbox"></i><h6>Tidak ada slip pada filter ini</h6></div></td></tr>
+        <% } %>
+        <% rows.forEach(function (s) {
+             const meta = STATUS_PAYROLL[s.status] || { label: s.status, badge: 'secondary' }; %>
+          <tr>
+            <td class="nip-cell small"><%= s.nip %></td>
+            <td class="small fw-semibold">
+              <a href="/karyawan/<%= s.karyawan_id %>" class="text-decoration-none text-navy"><%= s.nama_lengkap %></a>
+              <div class="text-muted" style="font-size:.72rem"><%= s.jabatan || '-' %></div>
+            </td>
+            <td class="small text-muted"><%= s.departemen || '-' %></td>
+            <td class="text-center"><span class="badge text-bg-success"><%= s.hari_hadir %></span></td>
+            <td class="text-end num small <%= s.menit_lembur ? 'text-success-strong' : 'text-muted' %>">
+              <%= h.duration(s.menit_lembur) %>
+            </td>
+            <td class="text-end num small"><%= h.money(s.nilai_lembur) %></td>
+            <td class="text-end num small"><%= h.money(s.total_pendapatan) %></td>
+            <td class="text-end num small text-danger-strong"><%= h.money(s.total_potongan) %></td>
+            <td class="text-end num small fw-bold"><%= h.money(s.gaji_bersih) %></td>
+            <td><span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span></td>
+            <td class="text-end no-print">
+              <div class="btn-group btn-group-sm">
+                <a href="/payroll/<%= s.id %>" class="btn btn-outline-primary" title="Lihat slip"><i class="bi bi-eye"></i></a>
+                <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-check2-square"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <% Object.keys(STATUS_PAYROLL).forEach(function (k) { %>
+                    <li>
+                      <form method="post" action="/payroll/<%= s.id %>/status">
+                        <input type="hidden" name="status" value="<%= k %>">
+                        <button type="submit" class="dropdown-item small">
+                          Tandai sebagai <%= STATUS_PAYROLL[k].label %>
+                        </button>
+                      </form>
+                    </li>
+                  <% }); %>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <% if (rows.length) { %>
+        <tfoot>
+          <tr>
+            <td colspan="6" class="text-end">TOTAL</td>
+            <td class="text-end num"><%= h.money(total.totalPendapatan) %></td>
+            <td class="text-end num"><%= h.money(total.totalPotongan) %></td>
+            <td class="text-end num"><%= h.money(total.gajiBersih) %></td>
+            <td colspan="2" class="no-print"></td>
+          </tr>
+        </tfoot>
+      <% } %>
+    </table>
+  </div>
+
+  <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span class="small text-muted">
+      <i class="bi bi-calculator me-1"></i>
+      Hari kerja <%= param.hariKerjaBulanan %> hari/bulan &middot;
+      lembur <%= param.faktorLembur %>x &middot;
+      tunjangan harian <%= param.persenTunjanganHadir > 0 ? '+' + param.persenTunjanganHadir + '%' : 'tanpa tambahan' %>
+    </span>
+    <% if (rows.length) { %>
+      <div class="btn-group btn-group-sm no-print">
+        <form method="post" action="/payroll/status-periode">
+          <input type="hidden" name="bulan" value="<%= periode.bulan %>">
+          <input type="hidden" name="tahun" value="<%= periode.tahun %>">
+          <input type="hidden" name="status" value="disetujui">
+          <button type="submit" class="btn btn-outline-info" data-confirm="Setujui seluruh slip periode ini?">
+            <i class="bi bi-check-all me-1"></i>Setujui Semua
+          </button>
+        </form>
+        <form method="post" action="/payroll/status-periode">
+          <input type="hidden" name="bulan" value="<%= periode.bulan %>">
+          <input type="hidden" name="tahun" value="<%= periode.tahun %>">
+          <input type="hidden" name="status" value="dibayar">
+          <button type="submit" class="btn btn-outline-success" data-confirm="Tandai seluruh slip periode ini sebagai sudah dibayar?">
+            <i class="bi bi-cash-coin me-1"></i>Tandai Dibayar
+          </button>
+        </form>
+        <form method="post" action="/payroll/hapus-periode?_method=DELETE">
+          <input type="hidden" name="bulan" value="<%= periode.bulan %>">
+          <input type="hidden" name="tahun" value="<%= periode.tahun %>">
+          <button type="submit" class="btn btn-outline-danger" data-confirm="Hapus seluruh draft slip periode ini? Slip yang sudah dibayar tidak akan dihapus.">
+            <i class="bi bi-trash me-1"></i>Hapus Draft
+          </button>
+        </form>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- MODAL GENERATE -->
+<div class="modal fade" id="modalGenerate" tabindex="-1" aria-labelledby="modalGenerateLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="/payroll/generate" data-dirty-guard>
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalGenerateLabel"><i class="bi bi-calculator me-1"></i>Hitung Payroll</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info small">
+          <i class="bi bi-info-circle me-1"></i>
+          Perhitungan dasar: gaji pokok, tunjangan per hari hadir, dan nilai lembur dari
+          durasi kerja di atas <%= h.dotTime('18:00') %> (faktor <%= param.faktorLembur %>x).
+          Slip yang sudah berstatus <em>dibayar</em> tidak akan ditimpa.
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label" for="g_bulan">Bulan</label>
+            <select class="form-select" id="g_bulan" name="bulan">
+              <% BULAN.forEach(function (b, i) { %>
+                <option value="<%= i + 1 %>" <%= periode.bulan === i + 1 ? 'selected' : '' %>><%= b %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="g_tahun">Tahun</label>
+            <select class="form-select" id="g_tahun" name="tahun">
+              <% const th = new Date().getFullYear();
+                 for (let t = th - 2; t <= th + 1; t += 1) { %>
+                <option value="<%= t %>" <%= periode.tahun === t ? 'selected' : '' %>><%= t %></option>
+              <% } %>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="bonus">Bonus Uniform (opsional)</label>
+            <div class="input-group">
+              <span class="input-group-text">Rp</span>
+              <input type="text" class="form-control num" id="bonus" name="bonus" data-rupiah value="0">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="kasbon">Kasbon (opsional)</label>
+            <div class="input-group">
+              <span class="input-group-text">Rp</span>
+              <input type="text" class="form-control num" id="kasbon" name="kasbon" data-rupiah value="0">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="potongan_lain">Potongan Lain (opsional)</label>
+            <div class="input-group">
+              <span class="input-group-text">Rp</span>
+              <input type="text" class="form-control num" id="potongan_lain" name="potongan_lain" data-rupiah value="0">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="catatan">Catatan Periode</label>
+            <textarea class="form-control" id="catatan" name="catatan" rows="2"
+                      placeholder="Contoh: Gaji bulan Ini dengan adjustment THR"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="submit" class="btn btn-navy"><i class="bi bi-calculator me-1"></i>Hitung Sekarang</button>
+      </div>
+    </form>
+  </div>
+</div>

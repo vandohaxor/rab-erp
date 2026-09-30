@@ -1,0 +1,52 @@
+<header class="app-topbar">
+  <div class="d-flex align-items-center gap-3">
+    <button class="btn btn-light d-lg-none px-2" type="button" data-bs-toggle="offcanvas"
+            data-bs-target="#sidebarMenu" aria-label="Buka menu">
+      <i class="bi bi-list fs-4"></i>
+    </button>
+
+    <a href="/" class="topbar-brand d-none d-md-flex align-items-center gap-2">
+      <span class="brand-mark brand-mark-logo">
+        <% if (company.logo) { %><img src="<%= company.logo %>" alt="Logo <%= company.nama %>" onerror="RabLogo(this)"><% } %><i class="bi bi-buildings-fill"></i>
+      </span>
+      <span class="d-flex flex-column lh-1">
+        <span class="brand-name">RAJAWALI ATAS BUMI</span>
+        <span class="brand-sub">Sistem Informasi Manajemen</span>
+      </span>
+    </a>
+  </div>
+
+  <div class="d-flex align-items-center gap-2 ms-auto">
+    <span class="topbar-date d-none d-lg-inline-flex align-items-center gap-2">
+      <i class="bi bi-calendar3"></i>
+      <%= h.dayName(h.today()) %>, <%= h.date(h.today(), 'D MMMM YYYY') %>
+    </span>
+
+    <div class="dropdown">
+      <button class="btn btn-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="avatar avatar-sm"><%= user ? user.inisial : '?' %></span>
+        <span class="d-none d-md-inline text-start lh-1">
+          <span class="d-block fw-semibold small"><%= user ? user.nama : '' %></span>
+          <span class="d-block text-muted" style="font-size:.72rem"><%= user ? user.roleLabel : '' %></span>
+        </span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+        <li class="px-3 py-2 border-bottom">
+          <div class="fw-semibold"><%= user ? user.nama : '' %></div>
+          <div class="small text-muted text-truncate" style="max-width:220px"><%= user ? user.email : '' %></div>
+          <span class="badge mt-1 text-bg-<%= user ? user.roleBadge : 'secondary' %>"><%= user ? user.roleLabel : '' %></span>
+        </li>
+        <li><a class="dropdown-item" href="/profil"><i class="bi bi-person-circle me-2"></i>Profil Saya</a></li>
+        <li><a class="dropdown-item" href="/ubah-password"><i class="bi bi-key me-2"></i>Ubah Password</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <form method="post" action="/logout" class="px-2">
+            <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+              <i class="bi bi-box-arrow-right me-1"></i>Keluar
+            </button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>

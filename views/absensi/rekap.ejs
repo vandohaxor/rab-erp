@@ -1,0 +1,130 @@
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `
+        <a href="/absensi" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Absensi Harian</a>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Cetak</button>
+      `
+    }) %>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg">
+    <div class="stat-card is-success">
+      <div>
+        <div class="stat-label">Total Hari Hadir</div>
+        <div class="stat-value"><%= total.hadir %></div>
+        <div class="stat-meta">akumulasi seluruh karyawan</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="stat-card is-info">
+      <div>
+        <div class="stat-label">Izin / Cuti</div>
+        <div class="stat-value"><%= total.izin + total.cuti %></div>
+        <div class="stat-meta">izin <%= total.izin %>, cuti <%= total.cuti %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="stat-card is-warning">
+      <div>
+        <div class="stat-label">Sakit</div>
+        <div class="stat-value"><%= total.sakit %></div>
+        <div class="stat-meta">dengan keterangan</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="stat-card">
+      <div>
+        <div class="stat-label">Work From Home</div>
+        <div class="stat-value"><%= total.wfh %></div>
+        <div class="stat-meta">izin WFH</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="stat-card is-gold">
+      <div>
+        <div class="stat-label">Total Lembur</div>
+        <div class="stat-value"><%= h.duration(total.menitLembur) %></div>
+        <div class="stat-meta"><%= h.plainMoney(Math.round(total.menitLembur / 60)) %> jam</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="card-header">
+    <form method="get" class="row g-2 align-items-center w-100">
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Pilih Bulan</label>
+        <select class="form-select form-select-sm" name="bulan" data-auto-submit>
+          <% BULAN.forEach(function (b, i) { %>
+            <option value="<%= i + 1 %>" <%= bulan === i + 1 ? 'selected' : '' %>><%= b %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-0">Pilih Tahun</label>
+        <select class="form-select form-select-sm" name="tahun" data-auto-submit>
+          <% const th = new Date().getFullYear();
+             for (let t = th - 2; t <= th + 1; t += 1) { %>
+            <option value="<%= t %>" <%= tahun === t ? 'selected' : '' %>><%= t %></option>
+          <% } %>
+        </select>
+      </div>
+      <div class="col-md-5 text-md-end">
+        <a href="/laporan/absensi?bulan=<%= bulan %>&tahun=<%= tahun %>" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i>Buka Laporan Lengkap
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr>
+          <th>NIP</th><th>Nama Lengkap</th><th>Departemen</th><th>Jabatan</th>
+          <th class="text-center">Hadir</th><th class="text-center">WFH</th><th class="text-center">Izin</th>
+          <th class="text-center">Sakit</th><th class="text-center">Cuti</th>
+          <th class="text-end">Total Kerja</th><th class="text-end">Lembur</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rekap.length) { %>
+          <tr><td colspan="11"><div class="empty-state"><i class="bi bi-inbox"></i><h6>Belum ada karyawan aktif</h6></div></td></tr>
+        <% } %>
+        <% rekap.forEach(function (r) { %>
+          <tr>
+            <td class="nip-cell small"><%= r.nip %></td>
+            <td class="small fw-semibold">
+              <a href="/karyawan/<%= r.id %>" class="text-decoration-none text-navy"><%= r.nama_lengkap %></a>
+            </td>
+            <td class="small text-muted"><%= r.departemen || '-' %></td>
+            <td class="small text-muted"><%= r.jabatan || '-' %></td>
+            <td class="text-center"><span class="badge text-bg-success"><%= r.hari_hadir %></span></td>
+            <td class="text-center text-muted"><%= r.hari_wfh %></td>
+            <td class="text-center text-muted"><%= r.hari_izin %></td>
+            <td class="text-center text-muted"><%= r.hari_sakit %></td>
+            <td class="text-center text-muted"><%= r.hari_cuti %></td>
+            <td class="text-end num small"><%= h.duration(r.menit_kerja) %></td>
+            <td class="text-end num small <%= r.menit_lembur ? 'text-success-strong fw-semibold' : 'text-muted' %>">
+              <%= h.duration(r.menit_lembur) %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="10" class="text-end">TOTAL</td>
+          <td class="text-end num"><%= h.duration(rekap.reduce(function (a, r) { return a + Number(r.menit_kerja); }, 0)) %></td>
+          <td class="text-end num"><%= h.duration(total.menitLembur) %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>

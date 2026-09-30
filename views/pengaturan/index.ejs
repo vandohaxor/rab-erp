@@ -1,0 +1,362 @@
+<%
+  const tabs = [
+    { key: 'perusahaan', label: 'Profil Perusahaan', icon: 'bi-building' },
+    { key: 'jadwal', label: 'Jadwal Kerja', icon: 'bi-clock' },
+    { key: 'payroll', label: 'Parameter Gaji', icon: 'bi-calculator' },
+    { key: 'departemen', label: 'Departemen', icon: 'bi-diagram-3' },
+  ];
+  const aktif = tabs.find(function (t) { return t.key === tab; }) || tabs[0];
+%>
+
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `<a href="/pengaturan/audit" class="btn btn-outline-primary btn-sm"><i class="bi bi-activity me-1"></i>Log Aktivitas</a>`
+    }) %>
+
+<ul class="nav nav-tabs mb-4" role="tablist">
+  <% tabs.forEach(function (t) { %>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link <%= t.key === aktif.key ? 'active' : '' %>" data-bs-toggle="tab"
+              data-bs-target="#tab-<%= t.key %>" type="button" role="tab">
+        <i class="bi <%= t.icon %> me-1"></i><%= t.label %>
+      </button>
+    </li>
+  <% }); %>
+</ul>
+
+<div class="tab-content">
+
+  <!-- ============ PROFIL PERUSAHAAN ============ -->
+  <div class="tab-pane fade <%= aktif.key === 'perusahaan' ? 'show active' : '' %>" id="tab-perusahaan">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <form method="post" action="/pengaturan/perusahaan">
+          <div class="card">
+            <div class="card-header"><span><i class="bi bi-building me-1"></i>Identitas Perusahaan</span></div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <label class="form-label" for="p_badan">Nama Badan Usaha <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="p_badan" name="perusahaan.badan"
+                         value="<%= values['perusahaan.badan'] || '' %>" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="p_npwp">NPWP</label>
+                  <input type="text" class="form-control" id="p_npwp" name="perusahaan.npwp"
+                         value="<%= values['perusahaan.npwp'] || '' %>">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="p_logo">Logo Perusahaan</label>
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="brand-mark brand-mark-logo brand-mark-lg">
+                      <% if (values['perusahaan.logo']) { %><img src="<%= values['perusahaan.logo'] %>" alt="Logo perusahaan" onerror="RabLogo(this)"><% } %><i class="bi bi-buildings-fill"></i>
+                    </span>
+                    <div class="flex-grow-1">
+                      <input type="text" class="form-control" id="p_logo" name="perusahaan.logo"
+                             value="<%= values['perusahaan.logo'] || '' %>" placeholder="/uploads/logo.png">
+                      <div class="form-text">Letakkan file logo di folder <code>public/uploads</code>, lalu isi alamatnya di sini. Dipakai pada menu, halaman masuk, kop laporan Excel, dan hasil cetak.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="p_tagline">Tagline / Slogan</label>
+                  <input type="text" class="form-control" id="p_tagline" name="perusahaan.tagline"
+                         value="<%= values['perusahaan.tagline'] || '' %>">
+                  <div class="form-text">Tampil pada halaman masuk.</div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="p_alamat">Alamat</label>
+                  <textarea class="form-control" id="p_alamat" name="perusahaan.alamat" rows="2"><%= values['perusahaan.alamat'] || '' %></textarea>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="p_kota">Kota / Kabupaten</label>
+                  <input type="text" class="form-control" id="p_kota" name="perusahaan.kota" value="<%= values['perusahaan.kota'] || '' %>">
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label" for="p_provinsi">Provinsi</label>
+                  <input type="text" class="form-control" id="p_provinsi" name="perusahaan.provinsi" value="<%= values['perusahaan.provinsi'] || '' %>">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="p_pos">Kode Pos</label>
+                  <input type="text" class="form-control num" id="p_pos" name="perusahaan.kode_pos" value="<%= values['perusahaan.kode_pos'] || '' %>">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-4">
+            <div class="card-header"><span><i class="bi bi-telephone me-1"></i>Kontak</span></div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label" for="p_telepon">Telepon</label>
+                  <input type="text" class="form-control" id="p_telepon" name="perusahaan.telepon" value="<%= values['perusahaan.telepon'] || '' %>">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="p_email">Email</label>
+                  <input type="email" class="form-control" id="p_email" name="perusahaan.email" value="<%= values['perusahaan.email'] || '' %>">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="p_web">Website</label>
+                  <input type="text" class="form-control" id="p_web" name="perusahaan.website" value="<%= values['perusahaan.website'] || '' %>">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="p_direktur">Nama Direktur / Penanggung Jawab</label>
+                  <input type="text" class="form-control" id="p_direktur" name="perusahaan.direktur" value="<%= values['perusahaan.direktur'] || '' %>">
+                  <div class="form-text">Nama ini yang akan tercetak pada laporan resmi.</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer text-end">
+              <button type="submit" class="btn btn-navy"><i class="bi bi-save me-1"></i>Simpan Profil Perusahaan</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header"><span><i class="bi bi-eye me-1"></i>Pratinjau Kop Surat</span></div>
+          <div class="card-body text-center">
+            <div class="border rounded p-3" style="background:#fff">
+              <div class="brand-mark mb-2" style="width:44px;height:44px;font-size:1.2rem"><i class="bi bi-buildings-fill"></i></div>
+              <h6 class="mb-0 text-navy" style="font-size:.95rem"><%= values['perusahaan.badan'] || 'PT Rajawali Atas Bumi' %></h6>
+              <div class="text-muted" style="font-size:.7rem"><%= values['perusahaan.tagline'] || '' %></div>
+              <hr class="my-2">
+              <div class="text-muted" style="font-size:.7rem;line-height:1.5">
+                <%= values['perusahaan.alamat'] || '-' %><br>
+                <%= [values['perusahaan.kota'], values['perusahaan.provinsi'], values['perusahaan.kode_pos']].filter(Boolean).join(', ') || '' %><br>
+                <%= values['perusahaan.telepon'] || '' %>
+              </div>
+            </div>
+            <p class="form-text mt-3 mb-0">
+              Identitas ini dipakai pada kop surat laporan resmi yang dicetak dari sistem.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ JADWAL KERJA ============ -->
+  <div class="tab-pane fade <%= aktif.key === 'jadwal' ? 'show active' : '' %>" id="tab-jadwal">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <form method="post" action="/pengaturan/jadwal">
+          <div class="card">
+            <div class="card-header"><span><i class="bi bi-clock me-1"></i>Jam Kerja &amp; Toleransi</span></div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label" for="j_masuk">Jam Masuk <span class="text-danger">*</span></label>
+                  <input type="time" class="form-control" id="j_masuk" name="jam_masuk" value="<%= jadwal.jamMasuk %>" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="j_pulang">Jam Pulang <span class="text-danger">*</span></label>
+                  <input type="time" class="form-control" id="j_pulang" name="jam_pulang" value="<%= jadwal.jamPulang %>" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="j_toleransi">Toleransi (menit)</label>
+                  <input type="number" class="form-control" id="j_toleransi" name="toleransi_menit"
+                         value="<%= jadwal.toleransi %>" min="0" max="120">
+                  <div class="form-text">Batas keterlambatan yang masih dianggap wajar.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="j_batas">Batas Terakhir Absen Masuk</label>
+                  <input type="time" class="form-control" id="j_batas" name="batas_absen_masuk"
+                         value="<%= values['absensi.batas_absen_masuk'] || '09:00' %>">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt-4">
+            <div class="card-header"><span><i class="bi bi-calendar-week me-1"></i>Hari Kerja</span></div>
+            <div class="card-body">
+              <% const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                 const aktifHari = jadwal.hariKerja; %>
+              <div class="row g-2">
+                <% namaHari.forEach(function (nama, i) { %>
+                  <div class="col-6 col-md-4">
+                    <div class="form-check border rounded p-2 <%= aktifHari.includes(i) ? 'border-primary bg-light' : '' %>">
+                      <input class="form-check-input" type="checkbox" name="hari_kerja" value="<%= i %>"
+                             id="hari_<%= i %>" <%= aktifHari.includes(i) ? 'checked' : '' %>>
+                      <label class="form-check-label small" for="hari_<%= i %>"><%= nama %></label>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            </div>
+            <div class="card-footer text-end">
+              <button type="submit" class="btn btn-navy"><i class="bi bi-save me-1"></i>Simpan Jadwal Kerja</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card mb-4">
+          <div class="card-header"><span><i class="bi bi-calculator me-1"></i>Dampak Pengaturan</span></div>
+          <div class="card-body">
+            <dl class="mb-0">
+              <div class="detail-row"><dt>Jam kerja normal per hari</dt><dd class="num"><%= h.duration(jadwal.durasiNormal) %></dd></div>
+              <div class="detail-row"><dt>Batas masuk (toleransi)</dt><dd class="num"><%= h.minutesToTime(h.timeToMinutes(jadwal.jamMasuk) + jadwal.toleransi) %></dd></div>
+              <div class="detail-row"><dt>Hari kerja per minggu</dt><dd><%= aktifHari.length %> hari</dd></div>
+            </dl>
+            <div class="alert alert-warning small mt-3 mb-0">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              Setiap menit kerja di atas <strong><%= h.dotTime(jadwal.jamPulang) %></strong> dihitung sebagai lembur
+              dan otomatis masuk ke perhitungan gaji karyawan.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span><i class="bi bi-info-circle me-1"></i>Tentang Perhitungan</span></div>
+          <div class="card-body">
+            <p class="small mb-2"><strong>Durasi kerja</strong> = jam pulang tercatat - jam masuk tercatat.</p>
+            <p class="small mb-2"><strong>Lembur</strong> = durasi kerja - jam kerja normal (tidak pernah negatif).</p>
+            <p class="small mb-0"><strong>Nilai lembur</strong> dihitung saat proses payroll berdasarkan
+              gaji pokok, jumlah jam lembur, dan faktor pengali yang ditetapkan.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PARAMETER GAJI ============ -->
+  <div class="tab-pane fade <%= aktif.key === 'payroll' ? 'show active' : '' %>" id="tab-payroll">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <form method="post" action="/pengaturan/payroll">
+          <div class="card">
+            <div class="card-header"><span><i class="bi bi-calculator me-1"></i>Parameter Perhitungan Gaji</span></div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label" for="pp_hari">Hari Kerja per Bulan</label>
+                  <input type="number" class="form-control" id="pp_hari" name="payroll.hari_kerja_bulanan"
+                         value="<%= values['payroll.hari_kerja_bulanan'] || 22 %>" min="1" max="31" required>
+                  <div class="form-text">Dasar perhitungan gaji harian.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="pp_jam">Jam Kerja per Hari</label>
+                  <input type="number" class="form-control" id="pp_jam" name="payroll.jam_kerja_harian"
+                         value="<%= values['payroll.jam_kerja_harian'] || 8 %>" min="1" max="24" required>
+                  <div class="form-text">Untuk menghitung tarif dasar lembur.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="pp_faktor">Faktor Pengali Lembur</label>
+                  <input type="number" step="0.1" class="form-control" id="pp_faktor" name="payroll.faktor_lembur"
+                         value="<%= values['payroll.faktor_lembur'] || 1.5 %>" min="1" max="5" step="0.1" required>
+                  <div class="form-text">1.5 = 150% dari tarif jam kerja.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="pp_tunjangan">Tambahan Tunjangan Kehadiran (%)</label>
+                  <input type="number" step="0.1" class="form-control" id="pp_tunjangan" name="payroll.persen_tunjangan_hadir"
+                         value="<%= values['payroll.persen_tunjangan_hadir'] || 0 %>" min="0" max="500" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="pp_bpjs">Potongan BPJS (%)</label>
+                  <input type="number" step="0.1" class="form-control" id="pp_bpjs" name="payroll.persen_bpjs"
+                         value="<%= values['payroll.persen_bpjs'] || 0 %>" min="0" max="50" step="0.1" required>
+                  <div class="form-text">Dihitung dari total pendapatan. Isi 0 bila belum berlaku.</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer text-end">
+              <button type="submit" class="btn btn-navy"><i class="bi bi-save me-1"></i>Simpan Parameter</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header"><span><i class="bi bi-signpost-split me-1"></i>Rumus Perhitungan</span></div>
+          <div class="card-body">
+            <div class="alert alert-light border small">
+              <strong>1. Gaji per hari</strong><br>
+              <code class="text-navy">gaji_pokok &divide; hari_kerja_bulanan</code>
+            </div>
+            <div class="alert alert-light border small">
+              <strong>2. Tunjangan hari kerja</strong><br>
+              <code class="text-navy">(tunj_transport + tunj_makan) x hari_hadir</code>
+            </div>
+            <div class="alert alert-light border small">
+              <strong>3. Nilai lembur</strong><br>
+              <code class="text-navy">((gaji_pokok + tunj_tetap) &divide; (hari_kerja x jam_kerja)) x faktor x jam_lembur</code>
+            </div>
+            <div class="alert alert-light border small">
+              <strong>4. Potongan absensi</strong><br>
+              <code class="text-navy">(izin + sakit + cuti) x gaji_per_hari</code>
+            </div>
+            <div class="alert alert-success small mb-0">
+              <strong>5. Gaji bersih</strong> = total pendapatan - total potongan
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DEPARTEMEN ============ -->
+  <div class="tab-pane fade <%= aktif.key === 'departemen' ? 'show active' : '' %>" id="tab-departemen">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header"><span><i class="bi bi-diagram-3 me-1"></i>Daftar Departemen</span></div>
+          <div class="table-responsive">
+            <table class="table table-hover table-compact mb-0">
+              <thead>
+                <tr><th>Nama Departemen</th><th>Deskripsi</th><th class="text-center">Karyawan</th><th class="text-end">Aksi</th></tr>
+              </thead>
+              <tbody>
+                <% if (!departemen.length) { %>
+                  <tr><td colspan="4"><div class="empty-state"><i class="bi bi-diagram-3"></i><h6>Belum ada departemen</h6></div></td></tr>
+                <% } %>
+                <% departemen.forEach(function (d) { %>
+                  <tr>
+                    <td class="small fw-semibold"><%= d.nama %></td>
+                    <td class="small text-muted"><%= d.deskripsi || '-' %></td>
+                    <td class="text-center">
+                      <span class="badge text-bg-light border text-muted"><%= d.jumlah_karyawan %></span>
+                    </td>
+                    <td class="text-end">
+                      <form method="post" action="/pengaturan/departemen/<%= d.id %>?_method=DELETE" class="d-inline"
+                            data-confirm="Hapus departemen &quot;<%= d.nama %>&quot;? Karyawan terkait akan menjadi tanpa departemen.">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header"><span><i class="bi bi-plus-circle me-1"></i>Tambah Departemen</span></div>
+          <div class="card-body">
+            <form method="post" action="/pengaturan/departemen">
+              <div class="mb-3">
+                <label class="form-label" for="d_nama">Nama Departemen</label>
+                <input type="text" class="form-control" id="d_nama" name="nama" required placeholder="Contoh: Logistik">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="d_desc">Deskripsi</label>
+                <textarea class="form-control" id="d_desc" name="deskripsi" rows="2"
+                          placeholder="Ruang lingkup pekerjaan departemen"></textarea>
+              </div>
+              <button type="submit" class="btn btn-navy w-100"><i class="bi bi-save me-1"></i>Simpan Departemen</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

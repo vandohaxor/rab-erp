@@ -1,0 +1,83 @@
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `<button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i>Cetak</button>`
+    }) %>
+
+<form method="get" class="card mb-4">
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label" for="status">Status Karyawan</label>
+        <select class="form-select" id="status" name="status" data-auto-submit>
+          <option value="aktif" <%= status === 'aktif' ? 'selected' : '' %>>Aktif</option>
+          <option value="cuti" <%= status === 'cuti' ? 'selected' : '' %>>Cuti</option>
+          <option value="nonaktif" <%= status === 'nonaktif' ? 'selected' : '' %>>Nonaktif</option>
+          <option value="semua" <%= status === 'semua' ? 'selected' : '' %>>Semua</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-people me-1"></i>Daftar Karyawan</span>
+    <span class="badge text-bg-light border text-muted"><%= rows.length %> orang</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr>
+          <th>#</th><th>NIP</th><th>Nama Lengkap</th><th>Jabatan</th><th>Departemen</th>
+          <th class="text-center">JK</th><th>Masuk</th>
+          <th class="text-end">Gaji Pokok</th><th class="text-end">Total Tunjangan</th>
+          <th class="text-end">Total Kompensasi</th><th class="text-center">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="11"><div class="empty-state"><i class="bi bi-person-x"></i><h6>Tidak ada karyawan pada filter ini</h6></div></td></tr>
+        <% } %>
+        <% rows.forEach(function (k, i) {
+             const tunj = Number(k.tunjangan_transport) + Number(k.tunjangan_makan) + Number(k.tunjangan_lain);
+             const m = STATUS_KARYAWAN[k.status_karyawan] || { label: k.status_karyawan, badge: 'secondary' }; %>
+          <tr>
+            <td class="num small text-muted"><%= i + 1 %></td>
+            <td class="num small"><%= k.nip %></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar avatar-sm"><%= h.initials(k.nama_lengkap) %></span>
+                <div>
+                  <div class="small fw-semibold"><%= k.nama_lengkap %></div>
+                  <div class="text-muted" style="font-size:.7rem"><%= k.email || '-' %></div>
+                </div>
+              </div>
+            </td>
+            <td class="small text-muted"><%= k.jabatan || '-' %></td>
+            <td class="small text-muted"><%= k.departemen || '-' %></td>
+            <td class="text-center small"><%= k.jenis_kelamin %></td>
+            <td class="num small"><%= h.date(k.tanggal_masuk) %></td>
+            <td class="text-end num small"><%= h.money(k.gaji_pokok) %></td>
+            <td class="text-end num small text-success-strong"><%= h.money(tunj) %></td>
+            <td class="text-end num small fw-semibold"><%= h.money(Number(k.gaji_pokok) + tunj) %></td>
+            <td class="text-center"><span class="badge text-bg-<%= m.badge %>"><%= m.label %></span></td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <% if (rows.length) { %>
+        <tfoot>
+          <tr>
+            <th colspan="8" class="text-end">TOTAL KOMPENSASI BULANAN</th>
+            <th class="text-end num"><%= h.money(total) %></th>
+            <th></th><th></th>
+          </tr>
+        </tfoot>
+      <% } %>
+    </table>
+  </div>
+  <div class="card-footer small text-muted">
+    Total tunjangan mencakup tunjangan transport, makan, dan lain-lain yang tercatat pada data karyawan.
+  </div>
+</div>

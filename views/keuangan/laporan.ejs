@@ -1,0 +1,125 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<%- include('../partials/print-head', { judul: 'LAPORAN LABA RUGI', periode: 'Periode ' + h.date(tanggalMulai) + ' s.d. ' + h.date(tanggalSelesai) }) %>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <form method="get" class="row g-2 align-items-center w-100">
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Dari Tanggal</label>
+        <input type="date" class="form-control form-control-sm" name="tanggal_mulai" value="<%= tanggalMulai %>" data-auto-submit>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Sampai Tanggal</label>
+        <input type="date" class="form-control form-control-sm" name="tanggal_selesai" value="<%= tanggalSelesai %>" data-auto-submit>
+      </div>
+      <div class="col-md-4 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-navy btn-sm flex-fill"><i class="bi bi-funnel me-1"></i>Terapkan</button>
+      </div>
+    </form>
+  </div>
+  <div class="card-body">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <h6 class="text-navy border-bottom pb-2 mb-0">
+          <i class="bi bi-arrow-down-circle me-1 text-success"></i>PENDAPATAN
+        </h6>
+        <table class="table table-sm table-compact mb-0">
+          <tbody>
+            <% if (!perKategoriMasuk.length) { %>
+              <tr><td class="small text-muted py-3 text-center">Tidak ada pendapatan pada periode ini</td></tr>
+            <% } %>
+            <% perKategoriMasuk.forEach(function (k) { %>
+              <tr>
+                <td class="small"><%= k.kategori %> <span class="text-muted">(<%= k.jumlah_transaksi %>x)</span></td>
+                <td class="text-end num small"><%= h.money(k.total) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="text-end">Total Pendapatan</td>
+              <td class="text-end num"><%= h.money(rekap.pemasukan) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="text-navy border-bottom pb-2 mb-0">
+          <i class="bi bi-arrow-up-circle me-1 text-danger"></i>PENGELUARAN
+        </h6>
+        <table class="table table-sm table-compact mb-0">
+          <tbody>
+            <% if (!perKategoriKeluar.length) { %>
+              <tr><td class="small text-muted py-3 text-center">Tidak ada pengeluaran pada periode ini</td></tr>
+            <% } %>
+            <% perKategoriKeluar.forEach(function (k) { %>
+              <tr>
+                <td class="small"><%= k.kategori %> <span class="text-muted">(<%= k.jumlah_transaksi %>x)</span></td>
+                <td class="text-end num small"><%= h.money(k.total) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="text-end">Total Pengeluaran</td>
+              <td class="text-end num"><%= h.money(rekap.pengeluaran) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <div class="row g-3">
+      <div class="col-md-4 text-md-end">
+        <div class="text-muted small">Laba Bersih</div>
+        <div class="stat-value num text-<%= rekap.labaBersih >= 0 ? 'success-strong' : 'danger-strong' %>">
+          <%= h.money(rekap.labaBersih) %>
+        </div>
+      </div>
+      <div class="col-md-4 text-md-center">
+        <div class="text-muted small">Margin Laba</div>
+        <div class="stat-value"><%= h.percent(rekap.labaBersih, rekap.pemasukan) %>%</div>
+      </div>
+      <div class="col-md-4 text-md-start">
+        <div class="text-muted small">Jumlah Transaksi</div>
+        <div class="stat-value"><%= rekap.jumlahTransaksi %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span><i class="bi bi-bar-chart-line me-1"></i>Arus Kas Harian</span></div>
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr><th>Tanggal</th><th class="text-end">Pemasukan</th><th class="text-end">Pengeluaran</th><th class="text-end">Selisih</th></tr>
+      </thead>
+      <tbody>
+        <% if (!arusKas.length) { %>
+          <tr><td colspan="4"><div class="empty-state py-4"><i class="bi bi-inbox"></i><h6>Tidak ada arus kas</h6></div></td></tr>
+        <% } %>
+        <% let kumulatif = 0; %>
+        <% arusKas.forEach(function (r) { kumulatif += r.pemasukan - r.pengeluaran; %>
+          <tr>
+            <td class="small"><%= h.dayName(r.tanggal) %>, <%= h.date(r.tanggal) %></td>
+            <td class="text-end num small text-success-strong"><%= h.money(r.pemasukan) %></td>
+            <td class="text-end num small text-danger-strong"><%= h.money(r.pengeluaran) %></td>
+            <td class="text-end num small <%= (r.pemasukan - r.pengeluaran) >= 0 ? 'text-success-strong' : 'text-danger-strong' %>">
+              <%= h.money(r.pemasukan - r.pengeluaran) %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="text-end">SELISIH BERSIH</td>
+          <td class="text-end num"><%= h.money(rekap.labaBersih) %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>

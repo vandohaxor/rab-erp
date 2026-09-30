@@ -1,0 +1,81 @@
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `<a href="/keuangan/transaksi" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Kembali</a>`
+    }) %>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-tags me-1"></i>Kategori Transaksi</span></div>
+      <div class="table-responsive">
+        <table class="table table-hover table-compact mb-0">
+          <thead>
+            <tr><th>Nama Kategori</th><th>Jenis</th><th>Keterangan</th><th class="text-center">Dipakai</th><th class="text-end">Aksi</th></tr>
+          </thead>
+          <tbody>
+            <% const dipakai = Object.fromEntries(pemakaian.map(function (p) { return [p.kategori_id, p.total]; })); %>
+            <% if (!semua.length) { %>
+              <tr><td colspan="5"><div class="empty-state"><i class="bi bi-tags"></i><h6>Belum ada kategori</h6></div></td></tr>
+            <% } %>
+            <% semua.forEach(function (k) { %>
+              <tr>
+                <td class="small fw-semibold"><%= k.nama %></td>
+                <td>
+                  <span class="badge badge-status text-bg-<%= k.jenis === 'pemasukan' ? 'success' : 'danger' %>">
+                    <%= h.capitalize(k.jenis) %>
+                  </span>
+                </td>
+                <td class="small text-muted"><%= k.keterangan || '-' %></td>
+                <td class="text-center">
+                  <% if (dipakai[k.id]) { %>
+                    <span class="badge text-bg-light border text-muted"><%= dipakai[k.id] %> transaksi</span>
+                  <% } else { %>
+                    <span class="text-muted small">-</span>
+                  <% } %>
+                </td>
+                <td class="text-end">
+                  <form method="post" action="/keuangan/kategori/<%= k.id %>?_method=DELETE" class="d-inline"
+                        data-confirm="Hapus kategori &quot;<%= k.nama %>&quot;?">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" <%= dipakai[k.id] ? 'disabled title="Kategori masih dipakai transaksi"' : '' %>>
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header"><span><i class="bi bi-plus-circle me-1"></i>Tambah Kategori</span></div>
+      <div class="card-body">
+        <form method="post" action="/keuangan/kategori">
+          <div class="mb-3">
+            <label class="form-label" for="nama">Nama Kategori</label>
+            <input type="text" class="form-control" id="nama" name="nama" required
+                   placeholder="Contoh: Sewa Gudang">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="jenis">Jenis</label>
+            <select class="form-select" id="jenis" name="jenis" required>
+              <option value="pemasukan">Pemasukan</option>
+              <option value="pengeluaran" selected>Pengeluaran</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="keterangan">Keterangan</label>
+            <textarea class="form-control" id="keterangan" name="keterangan" rows="2"
+                      placeholder="Opsional: penjelasan singkat kategori"></textarea>
+          </div>
+          <button type="submit" class="btn btn-navy w-100"><i class="bi bi-save me-1"></i>Simpan Kategori</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

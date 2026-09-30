@@ -1,0 +1,160 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-success">
+      <span class="stat-icon"><i class="bi bi-arrow-down-circle"></i></span>
+      <div>
+        <div class="stat-label">Pemasukan</div>
+        <div class="stat-value num" style="font-size:1.05rem"><%= h.money(rekap.pemasukan) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-danger">
+      <span class="stat-icon"><i class="bi bi-arrow-up-circle"></i></span>
+      <div>
+        <div class="stat-label">Pengeluaran</div>
+        <div class="stat-value num" style="font-size:1.05rem"><%= h.money(rekap.pengeluaran) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-gold">
+      <span class="stat-icon"><i class="bi bi-percent"></i></span>
+      <div>
+        <div class="stat-label">Margin Laba</div>
+        <div class="stat-value"><%= h.percent(rekap.labaBersih, rekap.pemasukan) %>%</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-info">
+      <span class="stat-icon"><i class="bi bi-list-ol"></i></span>
+      <div>
+        <div class="stat-label">Jumlah Transaksi</div>
+        <div class="stat-value"><%= rekap.jumlahTransaksi %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card table-card">
+  <div class="card-header">
+    <form method="get" class="row g-2 align-items-center w-100">
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Dari Tanggal</label>
+        <input type="date" class="form-control form-control-sm" name="tanggal_mulai" value="<%= filter.tanggal_mulai || '' %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Sampai Tanggal</label>
+        <input type="date" class="form-control form-control-sm" name="tanggal_selesai" value="<%= filter.tanggal_selesai || '' %>">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Jenis</label>
+        <select class="form-select form-select-sm" name="jenis">
+          <option value="">Semua</option>
+          <option value="pemasukan" <%= filter.jenis === 'pemasukan' ? 'selected' : '' %>>Pemasukan</option>
+          <option value="pengeluaran" <%= filter.jenis === 'pengeluaran' ? 'selected' : '' %>>Pengeluaran</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small mb-0">Kategori</label>
+        <select class="form-select form-select-sm" name="kategori_id">
+          <option value="">Semua kategori</option>
+          <% kategori.forEach(function (k) { %>
+            <option value="<%= k.id %>" <%= String(filter.kategori_id) === String(k.id) ? 'selected' : '' %>>
+              [<%= h.capitalize(k.jenis) %>] <%= k.nama %>
+            </option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label small mb-0">Kata Kunci</label>
+        <input type="text" class="form-control form-control-sm" name="q" value="<%= filter.q || '' %>"
+               placeholder="Kode, keterangan, PIC, nomor referensi...">
+      </div>
+      <div class="col-md-3 d-flex gap-2 align-items-end">
+        <button type="submit" class="btn btn-navy btn-sm w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
+        <a href="/keuangan/transaksi" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i></a>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr>
+          <th>Kode</th><th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Metode</th><th>PIC</th>
+          <th class="text-end">Jumlah</th><th class="text-end no-print">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="8"><div class="empty-state"><i class="bi bi-receipt"></i><h6>Transaksi tidak ditemukan</h6></div></td></tr>
+        <% } %>
+        <% rows.forEach(function (t) { %>
+          <tr>
+            <td><code class="small"><%= t.kode %></code></td>
+            <td class="small"><%= h.date(t.tanggal) %></td>
+            <td>
+              <span class="badge badge-status text-bg-<%= t.jenis === 'pemasukan' ? 'success' : 'danger' %>">
+                <i class="bi <%= t.jenis === 'pemasukan' ? 'bi-arrow-down' : 'bi-arrow-up' %> me-1"></i>
+                <%= h.capitalize(t.jenis) %>
+              </span>
+            </td>
+            <td class="small"><%= t.kategori || '-' %></td>
+            <td class="small text-muted text-capitalize"><%= t.metode %></td>
+            <td class="small text-muted"><%= t.pic || '-' %></td>
+            <td class="text-end num fw-semibold <%= t.jenis === 'pemasukan' ? 'text-success-strong' : 'text-danger-strong' %>">
+              <%= t.jenis === 'pemasukan' ? '+' : '-' %><%= h.money(t.jumlah) %>
+            </td>
+            <td class="text-end no-print">
+              <div class="btn-group btn-group-sm">
+                <a href="/keuangan/transaksi/<%= t.id %>/edit" class="btn btn-outline-primary" title="Ubah"><i class="bi bi-pencil-square"></i></a>
+                <form method="post" action="/keuangan/transaksi/<%= t.id %>?_method=DELETE" class="d-inline"
+                      data-confirm="Hapus transaksi <%= t.kode %>? Tindakan ini tidak dapat dibatalkan.">
+                  <button type="submit" class="btn btn-outline-danger" title="Hapus"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <% if (rows.length) { %>
+        <tfoot>
+          <tr>
+            <td colspan="6" class="text-end">TOTAL MUTASI</td>
+            <td class="text-end num">
+              <%= h.money(rows.reduce(function (a, t) { return a + (t.jenis === 'pemasukan' ? Number(t.jumlah) : -Number(t.jumlah)); }, 0)) %>
+            </td>
+            <td class="no-print"></td>
+          </tr>
+        </tfoot>
+      <% } %>
+    </table>
+  </div>
+
+  <% if (totalPages > 1) { %>
+    <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span class="small text-muted">
+        Menampilkan <%= (page - 1) * limit + 1 %>-<%= Math.min(page * limit, total) %> dari <%= total %> transaksi
+      </span>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+            <a class="page-link" href="?<%= new URLSearchParams({ ...filter, page: page - 1 }).toString() %>">Sebelumnya</a>
+          </li>
+          <% for (let p = 1; p <= totalPages; p += 1) { %>
+            <li class="page-item <%= p === page ? 'active' : '' %>">
+              <a class="page-link" href="?<%= new URLSearchParams({ ...filter, page: p }).toString() %>"><%= p %></a>
+            </li>
+          <% } %>
+          <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+            <a class="page-link" href="?<%= new URLSearchParams({ ...filter, page: page + 1 }).toString() %>">Berikutnya</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  <% } %>
+</div>

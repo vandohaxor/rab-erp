@@ -1,0 +1,30 @@
+<form method="get" class="d-flex flex-wrap gap-2 align-items-end">
+  <% if (typeof periode !== 'undefined' && periode.bulan) { %>
+    <div class="d-flex gap-2">
+      <select class="form-select form-select-sm" name="bulan" data-auto-submit aria-label="Pilih bulan">
+        <% BULAN.forEach(function (b, i) { %>
+          <option value="<%= i + 1 %>" <%= periode.bulan === i + 1 ? 'selected' : '' %>><%= b %></option>
+        <% }); %>
+      </select>
+      <select class="form-select form-select-sm" name="tahun" data-auto-submit aria-label="Pilih tahun">
+        <% const th = new Date().getFullYear();
+           for (let t = th - 2; t <= th + 1; t += 1) { %>
+          <option value="<%= t %>" <%= periode.tahun === t ? 'selected' : '' %>><%= t %></option>
+        <% } %>
+      </select>
+    </div>
+  <% } else { %>
+    <select class="form-select form-select-sm" name="tahun" data-auto-submit aria-label="Pilih tahun">
+      <% const th = new Date().getFullYear();
+         for (let t = th - 2; t <= th + 1; t += 1) { %>
+        <option value="<%= t %>" <%= periode.tahun === t ? 'selected' : '' %>><%= t %></option>
+      <% } %>
+    </select>
+  <% } %>
+  <% if (typeof extraQuery !== 'undefined') { %>
+    <% Object.keys(extraQuery).forEach(function (k) { %>
+      <input type="hidden" name="<%= k %>" value="<%= extraQuery[k] %>">
+    <% }); %>
+  <% } %>
+  <noscript><button type="submit" class="btn btn-navy btn-sm">Terapkan</button></noscript>
+</form>

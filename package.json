@@ -1,0 +1,33 @@
+{
+  "name": "rab-erp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistem Informasi Manajemen PT Rajawali Atas Bumi - Absensi, Karyawan, dan Keuangan",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:reset": "node src/scripts/reset-db.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.5",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "express-ejs-layouts": "^2.5.1",
+    "express-rate-limit": "^7.5.0",
+    "express-session": "^1.18.1",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.0.0",
+    "method-override": "^3.0.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.0"
+  }
+}

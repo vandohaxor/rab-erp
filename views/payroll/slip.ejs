@@ -1,0 +1,218 @@
+<%
+  const meta = STATUS_PAYROLL[slip.status] || { label: slip.status, badge: 'secondary' };
+%>
+
+<%- include('../partials/page-head', {
+      title: title,
+      subtitle: subtitle,
+      crumbs: crumbs,
+      actions: `
+        <a href="/payroll?bulan=${slip.bulan}&tahun=${slip.tahun}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-arrow-left me-1"></i>Kembali
+        </a>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+          <i class="bi bi-printer me-1"></i>Cetak Slip
+        </button>`
+    }) %>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="card">
+      <div class="card-header">
+        <span><i class="bi bi-receipt me-1"></i>Rincian Slip Gaji</span>
+        <span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span>
+      </div>
+      <div class="card-body">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h6 class="text-navy small text-uppercase border-bottom pb-2">Pendapatan</h6>
+            <table class="table table-sm table-compact mb-0">
+              <tbody>
+                <tr>
+                  <td class="small">Gaji pokok <%= h.monthName(slip.bulan) %> <%= slip.tahun %></td>
+                  <td class="text-end num small"><%= h.money(slip.gaji_pokok) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Tunjangan harian</td>
+                  <td class="text-end num small"><%= h.money(slip.tunjangan_harian) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Jumlah hari hadir</td>
+                  <td class="text-end num small"><%= slip.hari_hadir %> hari</td>
+                </tr>
+                <tr>
+                  <td class="small">Total tunjangan hadir</td>
+                  <td class="text-end num small"><%= h.money(slip.total_tunjangan) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Nilai lembur (<%= h.duration(slip.menit_lembur) %>)</td>
+                  <td class="text-end num small text-success-strong"><%= h.money(slip.nilai_lembur) %></td>
+                </tr>
+                <% if (Number(slip.bonus) > 0) { %>
+                  <tr>
+                    <td class="small">Bonus</td>
+                    <td class="text-end num small text-success-strong"><%= h.money(slip.bonus) %></td>
+                  </tr>
+                <% } %>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td class="text-end">Total Pendapatan</td>
+                  <td class="text-end num"><%= h.money(slip.total_pendapatan) %></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div class="col-md-6">
+            <h6 class="text-navy small text-uppercase border-bottom pb-2">Potongan</h6>
+            <table class="table table-sm table-compact mb-0">
+              <tbody>
+                <tr>
+                  <td class="small">Potongan absensi (izin, sakit, cuti)</td>
+                  <td class="text-end num small"><%= h.money(Math.max(0, Number(slip.gaji_pokok) - Number(slip.total_pendapatan) + Number(slip.total_tunjangan) + Number(slip.nilai_lembur) + Number(slip.bonus))) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Kasbon</td>
+                  <td class="text-end num small"><%= h.money(slip.kasbon) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Potongan lainnya</td>
+                  <td class="text-end num small"><%= h.money(slip.potongan_lain) %></td>
+                </tr>
+                <tr>
+                  <td class="small">Potongan BPJS</td>
+                  <td class="text-end num small"><%= h.money(Math.round(Number(slip.total_pendapatan) * Number(slip.persen_bpjs || 0) / 100)) %></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td class="text-end">Total Potongan</td>
+                  <td class="text-end num"><%= h.money(slip.total_potongan) %></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="stat-label">Gaji Bersih Diterima</div>
+            <div class="small text-muted">Transfer ke <%= slip.nama_bank || '-' %> <%= slip.no_rekening || '' %></div>
+          </div>
+          <div class="stat-value num text-navy" style="font-size:1.6rem"><%= h.money(slip.gaji_bersih) %></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><span><i class="bi bi-clock-history me-1"></i>Detail Absensi <%= h.monthName(slip.bulan) %> <%= slip.tahun %></span></div>
+      <div class="table-responsive">
+        <table class="table table-compact table-hover mb-0">
+          <thead>
+            <tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th class="text-end">Durasi</th><th class="text-end">Lembur</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <% if (!absensi.length) { %>
+              <tr><td colspan="6"><div class="empty-state py-4"><i class="bi bi-inbox"></i><h6>Belum ada data absensi</h6></div></td></tr>
+            <% } %>
+            <% absensi.forEach(function (a) {
+                 const m = STATUS_ABSENSI[a.status] || { label: a.status, badge: 'secondary' }; %>
+              <tr>
+                <td class="small"><%= h.dayName(a.tanggal).slice(0, 3) %>, <%= h.date(a.tanggal) %></td>
+                <td class="num small"><%= h.dotTime(a.jam_masuk) %></td>
+                <td class="num small"><%= h.dotTime(a.jam_pulang) %></td>
+                <td class="text-end num small"><%= a.durasi_menit ? h.duration(a.durasi_menit) : '-' %></td>
+                <td class="text-end num small <%= a.menit_lembur ? 'text-success-strong fw-semibold' : 'text-muted' %>">
+                  <%= a.menit_lembur ? h.duration(a.menit_lembur) : '-' %>
+                </td>
+                <td><span class="badge badge-status text-bg-<%= m.badge %>"><%= m.label %></span></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4 no-print">
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-person-vcard me-1"></i>Data Receivable</span></div>
+      <div class="card-body text-center">
+        <span class="avatar avatar-lg mb-2"><%= h.initials(slip.nama_lengkap) %></span>
+        <h6 class="mb-1 text-navy"><%= slip.nama_lengkap %></h6>
+        <p class="text-muted small mb-2"><%= slip.nip %> &middot; <%= slip.jabatan || '-' %></p>
+        <dl class="mb-0 text-start">
+          <div class="detail-row"><dt>Departemen</dt><dd><%= slip.departemen || '-' %></dd></div>
+          <div class="detail-row"><dt>Periode</dt><dd><%= h.monthName(slip.bulan) %> <%= slip.tahun %></dd></div>
+          <div class="detail-row"><dt>Bank</dt><dd><%= slip.nama_bank || '-' %></dd></div>
+          <div class="detail-row"><dt>No. Rekening</dt><dd class="num"><%= slip.no_rekening || '-' %></dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><span><i class="bi bi-sliders me-1"></i>Status Pembayaran</span></div>
+      <div class="card-body">
+        <div class="btn-group-vertical d-grid gap-2">
+          <% Object.keys(STATUS_PAYROLL).forEach(function (k) { %>
+            <form method="post" action="/payroll/<%= slip.id %>/status">
+              <input type="hidden" name="status" value="<%= k %>">
+              <button type="submit" class="btn btn-sm w-100 <%= slip.status === k ? 'btn-navy' : 'btn-outline-secondary' %>"
+                      <%= slip.status === 'dibayar' ? 'disabled' : '' %>>
+                <% if (slip.status === k) { %><i class="bi bi-check-lg me-1"></i><% } %>
+                Tandai <%= STATUS_PAYROLL[k].label %>
+              </button>
+            </form>
+          <% }); %>
+        </div>
+        <% if (slip.status === 'dibayar') { %>
+          <div class="alert alert-light border small mt-3 mb-0">
+            <i class="bi bi-lock-fill me-1 text-navy"></i>
+            Slip sudah dibayar sehingga data perhitungan dikunci.
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (slip.status !== 'dibayar') { %>
+      <div class="card">
+        <div class="card-header"><span><i class="bi bi-pencil-square me-1"></i>Penyesuaian</span></div>
+        <div class="card-body">
+          <form method="post" action="/payroll/<%= slip.id %>/ubah">
+            <div class="mb-3">
+              <label class="form-label" for="bonus">Bonus</label>
+              <div class="input-group">
+                <span class="input-group-text">Rp</span>
+                <input type="text" class="form-control num" id="bonus" name="bonus" data-rupiah
+                       value="<%= h.toPlainInput(slip.bonus) %>">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="kasbon">Kasbon / Potongan Pinjaman</label>
+              <div class="input-group">
+                <span class="input-group-text">Rp</span>
+                <input type="text" class="form-control num" id="kasbon" name="kasbon" data-rupiah
+                       value="<%= h.toPlainInput(slip.kasbon) %>">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="potongan_lain">Potongan Lain</label>
+              <div class="input-group">
+                <span class="input-group-text">Rp</span>
+                <input type="text" class="form-control num" id="potongan_lain" name="potongan_lain" data-rupiah
+                       value="<%= h.toPlainInput(slip.potongan_lain) %>">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="catatan">Catatan</label>
+              <textarea class="form-control" id="catatan" name="catatan" rows="2"><%= slip.catatan || '' %></textarea>
+            </div>
+            <button type="submit" class="btn btn-navy w-100"><i class="bi bi-save me-1"></i>Simpan Penyesuaian</button>
+          </form>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>

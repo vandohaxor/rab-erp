@@ -1,0 +1,468 @@
+<%
+  const d = data;
+  const role = user.role;
+  const isSA = role === 'superadmin';
+  const isKU = role === 'keuangan';
+  const isKR = role === 'karyawan';
+  const stmt = (r) => `${h.monthName(r.bulan)} ${r.tahun}`;
+%>
+
+<%- include('../partials/page-head', {
+      title: 'Dashboard',
+      subtitle: 'Selamat datang, ' + user.nama.split(' ')[0] + '. Ringkasan perusahaan per ' + h.date(h.today(), 'D MMMM YYYY') + '.',
+      actions: `
+        <a href="/absensi/rekap?bulan=${d.payroll ? d.payroll.periode.bulan : h.dayjs().month() + 1}&tahun=${d.payroll ? d.payroll.periode.tahun : h.dayjs().year()}" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-calendar2-week me-1"></i>Rekap Bulanan
+        </a>
+        ${isSA ? '<a href="/karyawan/tambah" class="btn btn-navy btn-sm"><i class="bi bi-person-plus me-1"></i>Tambah Karyawan</a>' : ''}
+        ${isKU ? '<a href="/keuangan/transaksi/tambah" class="btn btn-navy btn-sm"><i class="bi bi-plus-lg me-1"></i>Catat Transaksi</a>' : ''}
+        ${isKR ? '<a href="/absensi/saya" class="btn btn-navy btn-sm"><i class="bi bi-fingerprint me-1"></i>Absen Sekarang</a>' : ''}
+      `,
+    }) %>
+
+<!-- ============ PANEL ABSENSI HARIAN (umum) ============ -->
+<div class="row g-3 mb-4">
+  <% if (isKR && d.absensiSaya) { %>
+    <div class="col-12">
+      <div class="absen-panel">
+        <div class="row align-items-center g-4 position-relative">
+          <div class="col-lg-6">
+            <div class="text-white-50 text-uppercase small fw-semibold mb-1" style="letter-spacing:.08em">
+              Absensi Hari Ini
+            </div>
+            <div class="absen-clock mb-2" data-clock>--:--:--</div>
+            <div class="absen-status-chip">
+              <i class="bi bi-<%= d.absensiSaya.jam_masuk ? 'check-circle-fill' : 'clock-fill' %>"></i>
+              <% if (d.absensiSaya.jam_masuk) { %>
+                Masuk <%= h.dotTime(d.absensiSaya.jam_masuk) %>
+                <% if (d.absensiSaya.jam_pulang) { %> &middot; Pulang <%= h.dotTime(d.absensiSaya.jam_pulang) %><% } %>
+              <% } else { %>
+                Belum absen masuk
+              <% } %>
+            </div>
+          </div>
+          <div class="col-lg-6 text-lg-end">
+            <a href="/absensi/saya" class="btn btn-light px-4 py-2 fw-semibold">
+              <i class="bi bi-speedometer2 me-1"></i>Buka Halaman Absensi
+            </a>
+            <div class="text-white-50 small mt-2">
+              Jadwal kerja <%= h.dotTime(d.jadwal.jam_masuk) %> - <%= h.dotTime(d.jadwal.jamPulang) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <span class="stat-icon"><i class="bi bi-calendar2-check"></i></span>
+      <div>
+        <div class="stat-label">Hadir Hari Ini</div>
+        <div class="stat-value"><%= d.hariIni.hadir %> <small class="fs-6 text-muted">/ <%= d.hariIni.totalKaryawan %></small></div>
+        <div class="stat-meta">sudah absen masuk <%= d.hariIni.sudahAbsenMasuk %> orang</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-warning">
+      <span class="stat-icon"><i class="bi bi-clock-history"></i></span>
+      <div>
+        <div class="stat-label">Belum Pulang</div>
+        <div class="stat-value"><%= d.hariIni.belumPulang %></div>
+        <div class="stat-meta">masih berada di lokasi</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card is-gold">
+      <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+      <div>
+        <div class="stat-label">Lembur Bulan Ini</div>
+        <div class="stat-value"><%= h.duration(d.payroll ? d.payroll.total.menitLembur : 0) %></div>
+        <div class="stat-meta">akumulasi jam lembur</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card <%= isSA ? 'is-info' : '' %>">
+      <span class="stat-icon"><i class="bi bi-people"></i></span>
+      <div>
+        <div class="stat-label">Karyawan Aktif</div>
+        <div class="stat-value"><%= d.totalKaryawan %></div>
+        <div class="stat-meta"><%= isSA ? d.totalDepartemen + ' departemen' : 'total karyawan aktif' %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RINGKASAN KEUANGAN ============ -->
+<% if (d.keuangan) { %>
+  <% const k = d.keuangan; %>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-success">
+        <span class="stat-icon"><i class="bi bi-arrow-down-circle"></i></span>
+        <div>
+          <div class="stat-label">Pemasukan Bulan Ini</div>
+          <div class="stat-value num"><%= h.money(k.bulanIni.pemasukan) %></div>
+          <div class="stat-meta"><%= k.bulanIni.jumlahTransaksi %> transaksi</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-danger">
+        <span class="stat-icon"><i class="bi bi-arrow-up-circle"></i></span>
+        <div>
+          <div class="stat-label">Pengeluaran Bulan Ini</div>
+          <div class="stat-value num"><%= h.money(k.bulanIni.pengeluaran) %></div>
+          <div class="stat-meta"><%= k.perKategoriKeluar.length %> kategori</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card <%= k.bulanIni.labaBersih >= 0 ? 'is-gold' : 'is-danger' %>">
+        <span class="stat-icon"><i class="bi bi-graph-up-arrow"></i></span>
+        <div>
+          <div class="stat-label">Laba Bersih Bulan Ini</div>
+          <div class="stat-value num"><%= h.money(k.bulanIni.labaBersih) %></div>
+          <div class="stat-meta">tahun ini <%= h.money(k.tahunIni.labaBersih) %></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card is-info">
+        <span class="stat-icon"><i class="bi bi-wallet2"></i></span>
+        <div>
+          <div class="stat-label">Saldo Tahun Berjalan</div>
+          <div class="stat-value num"><%= h.money(k.tahunIni.pemasukan - k.tahunIni.pengeluaran) %></div>
+          <div class="stat-meta">sejak 1 Januari <%= h.dayjs().year() %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<div class="row g-4">
+  <!-- ============ GRAFIK ============ -->
+  <div class="col-xl-8">
+    <div class="card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-graph-up me-1"></i>Kehadiran 14 Hari Terakhir</span>
+        <span class="small text-muted">Total hadir vs izin/sakit</span>
+      </div>
+      <div class="card-body">
+        <div style="height:260px"><canvas id="chartKehadiran"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <% if (d.keuangan) { %>
+      <div class="card h-100">
+        <div class="card-header"><span><i class="bi bi-cash-stack me-1"></i>Arus Kas 12 Bulan</span></div>
+        <div class="card-body">
+          <div style="height:260px"><canvas id="chartKas"></canvas></div>
+        </div>
+      </div>
+    <% } else if (isSA) { %>
+      <div class="card h-100">
+        <div class="card-header"><span><i class="bi bi-clock-history me-1"></i>Keterlambatan Hari Ini</span></div>
+        <div class="card-body p-0">
+          <% if (!d.absensiTerlambat.length) { %>
+            <div class="empty-state py-4">
+              <i class="bi bi-emoji-smile"></i>
+              <h6>Tidak ada keterlambatan</h6>
+              <p class="small mb-0">Seluruh karyawan hadir tepat waktu.</p>
+            </div>
+          <% } else { %>
+            <ul class="list-group list-group-flush">
+              <% d.absensiTerlambat.forEach(function (a) { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center px-3">
+                  <div>
+                    <div class="fw-semibold small"><%= a.nama_lengkap %></div>
+                    <div class="text-muted" style="font-size:.75rem"><%= a.nip %> &middot; <%= a.departemen || '-' %></div>
+                  </div>
+                  <span class="badge badge-status text-bg-warning"><%= h.dotTime(a.jam_masuk) %></span>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="card h-100">
+        <div class="card-header"><span><i class="bi bi-calendar2-week me-1"></i>Rekap Absensi Saya</span></div>
+        <div class="card-body">
+          <% if (!d.rekapSaya) { %>
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i><h6>Belum ada data</h6>
+              <p class="small mb-0">Data absensi Anda belum tersedia.</p>
+            </div>
+          <% } else { %>
+            <% const r = d.rekapSaya; %>
+            <div class="row g-2 text-center mb-3">
+              <div class="col-4">
+                <div class="stat-value text-success-strong"><%= r.hariHadir %></div>
+                <div class="stat-label">Hadir</div>
+              </div>
+              <div class="col-4">
+                <div class="stat-value text-warning-strong"><%= r.hariIzin + r.hariSakit %></div>
+                <div class="stat-label">Izin/Sakit</div>
+              </div>
+              <div class="col-4">
+              </div>
+            </div>
+            <hr class="soft-divider my-2">
+            <dl class="mb-0">
+              <div class="detail-row"><dt>Total lembur</dt><dd><%= h.duration(r.menitLembur) %></dd></div>
+              <div class="detail-row"><dt>Terlambat</dt><dd><%= r.terlambat %> hari</dd></div>
+              <div class="detail-row"><dt>Jam kerja</dt><dd><%= h.duration(r.menitKerja) %></dd></div>
+            </dl>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- ============ SLIP GAJI KARYAWAN ============ -->
+  <% if (isKR && d.payrollSaya) { %>
+    <div class="col-xl-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <span><i class="bi bi-receipt me-1"></i>Slip Gaji <%= stmt({ bulan: d.payrollSaya.bulan, tahun: d.payrollSaya.tahun }) %></span>
+          <span class="badge badge-status text-bg-<%= d.payrollSaya.status === 'dibayar' ? 'success' : d.payrollSaya.status === 'disetujui' ? 'info' : 'secondary' %>">
+            <%= h.capitalize(d.payrollSaya.status) %>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="text-center py-2 mb-2">
+            <div class="stat-label">Gaji Bersih Diterima</div>
+            <div class="stat-value" style="font-size:1.9rem"><%= h.money(d.payrollSaya.gaji_bersih) %></div>
+          </div>
+          <hr class="soft-divider">
+          <dl class="mb-0">
+            <div class="detail-row"><dt>Gaji pokok</dt><dd class="num"><%= h.money(d.payrollSaya.gaji_pokok) %></dd></div>
+            <div class="detail-row"><dt>Tunjangan</dt><dd class="num"><%= h.money(d.payrollSaya.total_tunjangan) %></dd></div>
+            <div class="detail-row"><dt>Nilai lembur</dt><dd class="num text-success-strong"><%= h.money(d.payrollSaya.nilai_lembur) %></dd></div>
+            <div class="detail-row"><dt>Potongan</dt><dd class="num text-danger-strong">- <%= h.money(d.payrollSaya.total_potongan) %></dd></div>
+          </dl>
+          <a href="/payroll/slip-saya?bulan=<%= d.payrollSaya.bulan %>&tahun=<%= d.payrollSaya.tahun %>" class="btn btn-outline-primary w-100 btn-sm mt-3">
+            <i class="bi bi-printer me-1"></i>Lihat Slip Lengkap
+          </a>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- ============ TRANSAKSI TERBARU ============ -->
+  <% if (d.keuangan) { %>
+    <div class="col-xl-<%= isKR ? 8 : 12 %>">
+      <div class="card">
+        <div class="card-header">
+          <span><i class="bi bi-receipt me-1"></i>Transaksi Terbaru</span>
+          <a href="/keuangan/transaksi" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-compact mb-0">
+            <thead>
+              <tr>
+                <th>Kode</th><th>Tanggal</th><th>Kategori</th>
+                <th class="text-end">Pemasukan</th><th class="text-end">Pengeluaran</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% d.keuangan.transaksiTerbaru.forEach(function (t) { %>
+                <tr>
+                  <td><code class="small"><%= t.kode %></code></td>
+                  <td class="small"><%= h.date(t.tanggal) %></td>
+                  <td class="small"><%= t.kategori || '-' %></td>
+                  <td class="text-end num text-success-strong"><%= t.jenis === 'pemasukan' ? h.money(t.jumlah) : '-' %></td>
+                  <td class="text-end num text-danger-strong"><%= t.jenis === 'pengeluaran' ? h.money(t.jumlah) : '-' %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- ============ REKAP BULANAN (superadmin/keuangan) ============ -->
+  <% if (d.absensiBulanIni && d.absensiBulanIni.length) { %>
+    <div class="col-xl-<%= isKR ? 12 : 12 %>">
+      <div class="card">
+        <div class="card-header">
+          <span><i class="bi bi-clipboard-check me-1"></i>Rekap Kehadiran <%= stmt(d.payroll ? d.payroll.periode : { bulan: h.dayjs().month() + 1, tahun: h.dayjs().year() }) %></span>
+          <a href="/absensi/rekap" class="btn btn-sm btn-outline-primary">Buka Rekap</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-compact mb-0">
+            <thead>
+              <tr>
+                <th>NIP</th><th>Nama</th><th>Departemen</th>
+                <th class="text-center">Hadir</th><th class="text-center">Izin</th><th class="text-center">Sakit</th>
+                <th class="text-end">Lembur</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% d.absensiBulanIni.slice(0, 8).forEach(function (r) { %>
+                <tr>
+                  <td class="nip-cell small"><%= r.nip %></td>
+                  <td class="small fw-semibold"><%= r.nama_lengkap %></td>
+                  <td class="small text-muted"><%= r.departemen || '-' %></td>
+                  <td class="text-center"><span class="badge text-bg-success"><%= r.hari_hadir %></span></td>
+                  <td class="text-center text-muted"><%= r.hari_izin %></td>
+                  <td class="text-center text-muted"><%= r.hari_sakit %></td>
+                  <td class="text-end num small"><%= h.duration(r.menit_lembur) %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- ============ RIWAYAT ABSENSI SAYA ============ -->
+  <% if (isKR && d.riwayatAbsensiSaya && d.riwayatAbsensiSaya.length) { %>
+    <div class="col-xl-8">
+      <div class="card h-100">
+        <div class="card-header"><span><i class="bi bi-clock-history me-1"></i>Riwayat Absensi Saya</span></div>
+        <div class="table-responsive">
+          <table class="table table-hover table-compact mb-0">
+            <thead>
+              <tr><th>Tanggal</th><th>Masuk</th><th>Pulang</th><th class="text-end">Durasi</th><th class="text-end">Lembur</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <% d.riwayatAbsensiSaya.forEach(function (a) {
+                   const meta = STATUS_ABSENSI[a.status] || { label: a.status, badge: 'secondary' }; %>
+                <tr>
+                  <td class="small"><%= h.date(a.tanggal) %></td>
+                  <td class="num small"><%= h.dotTime(a.jam_masuk) %></td>
+                  <td class="num small"><%= h.dotTime(a.jam_pulang) %></td>
+                  <td class="text-end num small"><%= a.durasi_menit ? h.duration(a.durasi_menit) : '-' %></td>
+                  <td class="text-end num small <%= a.menit_lembur ? 'text-success-strong fw-semibold' : 'text-muted' %>">
+                    <%= a.menit_lembur ? h.duration(a.menit_lembur) : '-' %>
+                  </td>
+                  <td><span class="badge badge-status text-bg-<%= meta.badge %>"><%= meta.label %></span></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- ============ LOG AKTIVITAS ============ -->
+  <% if (isSA) { %>
+    <div class="col-xl-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <span><i class="bi bi-activity me-1"></i>Aktivitas Terakhir</span>
+          <a href="/pengaturan/audit" class="btn btn-sm btn-outline-primary">Semua</a>
+        </div>
+        <div class="card-body">
+          <% if (!d.aktivitas.length) { %>
+            <div class="empty-state py-3">
+              <i class="bi bi-inbox"></i><h6>Belum ada aktivitas</h6>
+            </div>
+          <% } else { %>
+            <div class="timeline">
+              <% d.aktivitas.forEach(function (a) { %>
+                <div class="timeline-item">
+                  <div class="small fw-semibold text-navy"><%= a.aksi %></div>
+                  <div class="small text-muted"><%= a.detail || a.entitas || '-' %></div>
+                  <div class="text-muted" style="font-size:.72rem">
+                    <%= a.nama || 'Sistem' %> &middot; <%= h.dateTime(a.created_at) %>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<script>
+  (function () {
+    const palette = { navy: '#16395c', gold: '#c9a227', green: '#157347', red: '#b42318', amber: '#b54708', slate: '#94a3b8' };
+    const gridColor = 'rgba(15,41,66,.08)';
+
+    const kehadiranEl = document.getElementById('chartKehadiran');
+    if (kehadiranEl && window.Chart) {
+      new Chart(kehadiranEl, {
+        type: 'bar',
+        data: {
+          labels: <%- JSON.stringify(d.trenKehadiran.map(function (r) { return r.label; })) %>,
+          datasets: [
+            { label: 'Hadir', data: <%- JSON.stringify(d.trenKehadiran.map(function (r) { return r.hadir; })) %>, backgroundColor: palette.green, borderRadius: 4, stack: 'a' },
+            { label: 'WFH', data: <%- JSON.stringify(d.trenKehadiran.map(function (r) { return r.wfh; })) %>, backgroundColor: palette.navy, borderRadius: 4, stack: 'a' },
+            { label: 'Izin/Sakit', data: <%- JSON.stringify(d.trenKehadiran.map(function (r) { return r.izin + r.sakit; })) %>, backgroundColor: palette.amber, borderRadius: 4, stack: 'a' },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, font: { size: 11 } } }
+          },
+          scales: {
+            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { stacked: true, beginAtZero: true, grid: { color: gridColor }, ticks: { precision: 0, font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    const kasEl = document.getElementById('chartKas');
+    if (kasEl && window.Chart && <%- JSON.stringify(Boolean(d.keuangan)) %>) {
+      const tren = <%- JSON.stringify(d.keuangan ? d.keuangan.tren : []) %>;
+      new Chart(kasEl, {
+        type: 'line',
+        data: {
+          labels: tren.map(function (t) { return t.periode; }),
+          datasets: [
+            {
+              label: 'Pemasukan', data: tren.map(function (t) { return t.pemasukan; }),
+              borderColor: palette.green, backgroundColor: 'rgba(21,115,71,.12)', tension: .35, fill: true, pointRadius: 2
+            },
+            {
+              label: 'Pengeluaran', data: tren.map(function (t) { return t.pengeluaran; }),
+              borderColor: palette.red, backgroundColor: 'rgba(180,35,24,.08)', tension: .35, fill: true, pointRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  return ctx.dataset.label + ': Rp ' + new Intl.NumberFormat('id-ID').format(ctx.parsed.y);
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: {
+              grid: { color: gridColor },
+              ticks: {
+                font: { size: 10 },
+                callback: function (value) {
+                  if (value >= 1e9) return (value / 1e9).toFixed(1) + 'M';
+                  if (value >= 1e6) return (value / 1e6).toFixed(0) + 'jt';
+                  return value;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  })();
+</script>

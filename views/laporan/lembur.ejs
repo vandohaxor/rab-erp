@@ -1,0 +1,79 @@
+<%- include('../partials/page-head', { title: title, subtitle: subtitle, crumbs: crumbs, actions: actions }) %>
+
+<div class="d-flex flex-wrap justify-content-end align-items-center gap-2 mb-3">
+  <%- include('../partials/filter-periode', { periode: periode }) %>
+  <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Cetak
+  </button>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Total Jam Lembur</div>
+      <div class="stat-value text-navy" style="font-size:1.3rem"><%= h.duration(totalMenit) %></div>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Total Nilai Lembur</div>
+      <div class="stat-value num text-success-strong" style="font-size:1.3rem"><%= h.money(totalNilai) %></div>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card"><div class="card-body">
+      <div class="stat-label">Karyawan Lembur</div>
+      <div class="stat-value text-navy" style="font-size:1.3rem"><%= rows.length %></div>
+      <div class="small text-muted">dari <%= jadwal.hariKerja.length %> hari kerja / minggu</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-clock-history me-1"></i>Detail Lembur Karyawan</span>
+    <span class="badge text-bg-light border text-muted">Lembur dihitung setelah <%= h.dotTime(jadwal.jamPulang) %></span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover table-compact mb-0">
+      <thead>
+        <tr><th>#</th><th>Karyawan</th><th>Departemen</th><th class="text-end">Gaji Pokok</th>
+        <th class="text-end">Total Lembur</th><th class="text-end">Nilai Lembur</th><th></th></tr>
+      </thead>
+      <tbody>
+        <% if (!rows.length) { %>
+          <tr><td colspan="7"><div class="empty-state"><i class="bi bi-check2-circle"></i><h6>Tidak ada lembur pada periode ini</h6></div></td></tr>
+        <% } %>
+        <% rows.forEach(function (r, i) { %>
+          <tr>
+            <td class="num small text-muted"><%= i + 1 %></td>
+            <td>
+              <div class="small fw-semibold"><%= r.nama_lengkap %></div>
+              <div class="text-muted" style="font-size:.7rem"><%= r.nip %></div>
+            </td>
+            <td class="small text-muted"><%= r.departemen || '-' %></td>
+            <td class="text-end num small"><%= h.money(r.gaji_pokok) %></td>
+            <td class="text-end num small text-warning-strong fw-semibold"><%= h.duration(r.menit_lembur) %></td>
+            <td class="text-end num small text-success-strong fw-semibold"><%= h.money(r.nilai_lembur) %></td>
+            <td class="text-end"><a href="/absensi?karyawan_id=<%= r.karyawan_id %>&bulan=<%= periode.bulan %>&tahun=<%= periode.tahun %>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <% if (rows.length) { %>
+        <tfoot>
+          <tr>
+            <th colspan="4" class="text-end">TOTAL</th>
+            <th class="text-end num"><%= h.duration(totalMenit) %></th>
+            <th class="text-end num"><%= h.money(totalNilai) %></th>
+            <th></th>
+          </tr>
+        </tfoot>
+      <% } %>
+    </table>
+  </div>
+  <div class="card-footer small text-muted">
+    Tarif dasar lembur <strong class="num"><%= h.money(param.dasarLemburPerJam) %>/jam</strong>,
+    faktor pengali <strong><%= param.faktorLembur %>x</strong>.
+    Nilai lembur masuk otomatis ke slip gaji sebagai pendapatan.
+  </div>
+</div>

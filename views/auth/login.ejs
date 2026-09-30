@@ -1,0 +1,105 @@
+<div class="d-flex align-items-center justify-content-center min-vh-100 px-3 py-5">
+  <div class="w-100" style="max-width: 980px;">
+    <div class="row g-4 align-items-center justify-content-center">
+
+      <div class="col-lg-5">
+        <div class="text-center text-lg-start mb-4 mb-lg-0">
+          <div class="d-inline-flex align-items-center gap-3 mb-3">
+            <span class="brand-mark brand-mark-logo" style="width:52px;height:52px;background:rgba(255,255,255,.14);color:#f3e6b8">
+              <% if (company.logo) { %><img src="<%= company.logo %>" alt="Logo <%= company.nama %>" onerror="RabLogo(this)"><% } %><i class="bi bi-buildings-fill"></i>
+            </span>
+            <div class="lh-1">
+              <div style="color:#fff;font-weight:800;letter-spacing:.05em;font-size:1rem">RAJAWALI ATAS BUMI</div>
+              <div style="color:rgba(255,255,255,.6);font-size:.74rem">Sistem Informasi Manajemen</div>
+            </div>
+          </div>
+          <h1 class="text-white fw-bold mb-2" style="font-size:1.7rem">Kelola Perusahaan<br>dalam Satu Platform</h1>
+          <p class="mb-4" style="color:rgba(255,255,255,.72);font-size:.92rem">
+            Data karyawan, absensi dan lembur, hingga pembukuan keuangan -
+            terhubung otomatis dalam satu sistem yang aman dan akurat.
+          </p>
+        </div>
+
+        <div class="auth-aside d-none d-lg-block">
+          <h6 class="mb-3"><i class="bi bi-shield-lock me-1"></i> Hak Akses Berbasis Peran</h6>
+          <ul>
+            <li><i class="bi bi-check-circle-fill"></i><span><strong>Superadmin</strong> - Direktur, akses penuh seluruh modul</span></li>
+            <li><i class="bi bi-check-circle-fill"></i><span><strong>Keuangan</strong> - transaksi, payroll, dan laporan</span></li>
+            <li><i class="bi bi-check-circle-fill"></i><span><strong>Karyawan</strong> - absensi harian dan slip gaji</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="auth-card">
+          <div class="auth-head">
+            <div class="d-inline-flex">
+              <span class="brand-mark brand-mark-logo">
+                <% if (company.logo) { %><img src="<%= company.logo %>" alt="Logo <%= company.nama %>" onerror="RabLogo(this)"><% } %><i class="bi bi-buildings-fill"></i>
+              </span>
+            </div>
+            <h2 class="auth-title mb-1">Masuk ke Akun Anda</h2>
+            <p class="auth-sub">Gunakan email dan password yang terdaftar</p>
+          </div>
+
+          <div class="auth-body-pad">
+            <% if (errors && errors.length) { %>
+              <div class="alert alert-danger py-2 px-3 small">
+                <i class="bi bi-exclamation-octagon-fill me-1"></i>
+                <% errors.forEach(function (e) { %><div><%= e.msg %></div><% }); %>
+              </div>
+            <% } %>
+
+            <% if (alasan === 'nonaktif') { %>
+              <div class="alert alert-warning py-2 px-3 small">
+                <i class="bi bi-lock-fill me-1"></i>Akun Anda berstatus nonaktif. Hubungi administrator.
+              </div>
+            <% } %>
+
+            <form method="post" action="/login" novalidate>
+              <input type="hidden" name="next" value="<%= next %>">
+
+              <div class="mb-3">
+                <label class="form-label" for="email">Email</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                  <input type="email" class="form-control" id="email" name="email"
+                         value="<%= email %>" required autofocus placeholder="nama@perusahaan.co.id">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label" for="password">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                  <input type="password" class="form-control" id="password" name="password"
+                         required placeholder="Masukkan password">
+                  <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Tampilkan password">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-navy w-100 py-2">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Masuk
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById('togglePassword');
+    var field = document.getElementById('password');
+    btn && btn.addEventListener('click', function () {
+      var show = field.type === 'password';
+      field.type = show ? 'text' : 'password';
+      btn.innerHTML = '<i class="bi bi-eye' + (show ? '-slash' : '') + '"></i>';
+    });
+  })();
+</script>
